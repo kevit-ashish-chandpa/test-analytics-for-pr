@@ -18,7 +18,7 @@ jobs:
 
             - id: analytics
               name: 'Run script for analytics'
-              uses: kevit-ashish-chandpa/test-analytics-for-pr@v2
+              uses: kevit-ashish-chandpa/test-analytics-for-pr@v3
               with:
                   GITHUB_TOKEN: ${{ secrets.PERSONAL_TOKEN }} # In the case of a personal access token, it needs to be added to the repository's secrets and used in this field.
                   GITHUB_REPO_FOR_ISSUE: pr-analytics # Make sure to specify the name of the repository where the issue will be created

@@ -1,0 +1,59 @@
+user,date,opened,merged,stale_prs,abandoned_prs,avg_commit_count,avg_files_changed,lines_added,lines_removed,review_cycle_total,reviewer_pending,comments_per_line_ratio
+total,total,30,26,0,4,8.9,17.066666666666666,13129,3390,0,1,0.07960401612274022
+total,10/2025,30,26,0,4,8.9,17.066666666666666,13129,3390,0,1,0.07960401612274022
+gemini-code-assist[bot],total,0,0,0,0,0,0,0,0,0,0,0
+gemini-code-assist[bot],10/2025,0,0,0,0,0,0,0,0,0,0,0
+kevit-siddharth-kanjaria,total,0,0,0,0,0,0,0,0,0,0,0
+kevit-siddharth-kanjaria,10/2025,0,0,0,0,0,0,0,0,0,0,0
+kevit-safin-sheikh,total,8,7,0,1,10.75,14.5,2773,262,0,0,0.0718193883020054
+kevit-safin-sheikh,10/2025,8,7,0,1,10.75,14.5,2773,262,0,0,0.0718193883020054
+AICL-backend-devs,10/2025,0,0,0,0,0,0,0,0,0,0,0
+AICL-backend-devs,total,0,0,0,0,0,0,0,0,0,0,0
+Bar Buddy devs,10/2025,0,0,0,0,0,0,0,0,0,0,0
+Bar Buddy devs,total,0,0,0,0,0,0,0,0,0,0,0
+developers-jump-start,10/2025,19,19,0,0,9.368421052631579,20.526315789473685,9890,2912,0,1,0.09202831743169293
+developers-jump-start,total,19,19,0,0,9.368421052631579,20.526315789473685,9890,2912,0,1,0.09202831743169293
+Elevonix developers,10/2025,0,0,0,0,0,0,0,0,0,0,0
+Elevonix developers,total,0,0,0,0,0,0,0,0,0,0,0
+orient-museum-BE,10/2025,0,0,0,0,0,0,0,0,0,0,0
+orient-museum-BE,total,0,0,0,0,0,0,0,0,0,0,0
+Quick Projects,10/2025,0,0,0,0,0,0,0,0,0,0,0
+Quick Projects,total,0,0,0,0,0,0,0,0,0,0,0
+RS recuitment Team,10/2025,0,0,0,0,0,0,0,0,0,0,0
+RS recuitment Team,total,0,0,0,0,0,0,0,0,0,0,0
+Trainee-Backend-2023,10/2025,0,0,0,0,0,0,0,0,0,0,0
+Trainee-Backend-2023,total,0,0,0,0,0,0,0,0,0,0,0
+Winrest-AI-Bot Team,10/2025,0,0,0,0,0,0,0,0,0,0,0
+Winrest-AI-Bot Team,total,0,0,0,0,0,0,0,0,0,0,0
+winrest-developer-team-write,10/2025,8,7,0,1,10.75,14.5,2773,262,0,0,0.0718193883020054
+winrest-developer-team-write,total,8,7,0,1,10.75,14.5,2773,262,0,0,0.0718193883020054
+Node Interns 2024,total,8,7,0,1,10.75,14.5,2773,262,0,0,0.0718193883020054
+Node Interns 2024,10/2025,8,7,0,1,10.75,14.5,2773,262,0,0,0.0718193883020054
+WBCA Member Backend Team,total,26,25,0,1,10,19.153846153846153,11974,3162,0,1,0.08874620264843437
+WBCA Member Backend Team,10/2025,26,25,0,1,10,19.153846153846153,11974,3162,0,1,0.08874620264843437
+Canada Streamhub Backend Team,total,16,15,0,1,6.5,11.8125,4727,415,0,0,0.0733042439467221
+Canada Streamhub Backend Team,10/2025,16,15,0,1,6.5,11.8125,4727,415,0,0,0.0733042439467221
+kevit-bhautik-rakhasiya,total,8,8,0,0,2.25,9.125,1954,153,0,0,0.07478909959143876
+kevit-bhautik-rakhasiya,10/2025,8,8,0,0,2.25,9.125,1954,153,0,0,0.07478909959143876
+Cedar Shores Backend Team,total,8,8,0,0,2.25,9.125,1954,153,0,0,0.07478909959143876
+Cedar Shores Backend Team,10/2025,8,8,0,0,2.25,9.125,1954,153,0,0,0.07478909959143876
+kevit-gungun-udhani,total,1,1,0,0,4,8,689,12,0,0,0.015691868758915834
+kevit-gungun-udhani,10/2025,1,1,0,0,4,8,689,12,0,0,0.015691868758915834
+orient-museum-FE,10/2025,1,1,0,0,4,8,689,12,0,0,0.015691868758915834
+orient-museum-FE,total,1,1,0,0,4,8,689,12,0,0,0.015691868758915834
+WBCA Member Frontend Team,10/2025,1,1,0,0,4,8,689,12,0,0,0.015691868758915834
+WBCA Member Frontend Team,total,1,1,0,0,4,8,689,12,0,0,0.015691868758915834
+Canada Streamhub Frontend Team,10/2025,1,1,0,0,4,8,689,12,0,0,0.015691868758915834
+Canada Streamhub Frontend Team,total,1,1,0,0,4,8,689,12,0,0,0.015691868758915834
+Cedar Shores Frontend Team,10/2025,1,1,0,0,4,8,689,12,0,0,0.015691868758915834
+Cedar Shores Frontend Team,total,1,1,0,0,4,8,689,12,0,0,0.015691868758915834
+Team Stream Control Panel,10/2025,1,1,0,0,4,8,689,12,0,0,0.015691868758915834
+Team Stream Control Panel,total,1,1,0,0,4,8,689,12,0,0,0.015691868758915834
+dependabot[bot],total,3,0,0,3,1,2,466,216,0,0,0.021675782021332357
+dependabot[bot],10/2025,3,0,0,3,1,2,466,216,0,0,0.021675782021332357
+Kevit-suketu-rola,total,0,0,0,0,0,0,0,0,0,0,0
+Kevit-suketu-rola,10/2025,0,0,0,0,0,0,0,0,0,0,0
+kevit-siddh-kothari,total,10,10,0,0,15.6,30.9,7247,2747,0,1,0.113453336571174
+kevit-siddh-kothari,10/2025,10,10,0,0,15.6,30.9,7247,2747,0,1,0.113453336571174
+Zavo Platform Middleware,total,10,10,0,0,15.6,30.9,7247,2747,0,1,0.113453336571174
+Zavo Platform Middleware,10/2025,10,10,0,0,15.6,30.9,7247,2747,0,1,0.113453336571174
