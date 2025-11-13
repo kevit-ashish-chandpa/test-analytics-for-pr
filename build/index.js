@@ -434,7 +434,7 @@ const collectData = (data, teams) => {
                 if ((0, calculations_1.checkUserInclusive)(userKey)) {
                     (0, set_1.default)(collection, [key, innerKey], (0, utils_1.preparePullRequestInfo)(pullRequest, (0, get_1.default)(collection, [key, innerKey], {})));
                 }
-                (0, set_1.default)(collection, [key, innerKey], (0, utils_1.preparePullRequestTimeline)(pullRequest, reviews, reviewRequests?.[0], statuses, (0, get_1.default)(collection, [key, innerKey], {})));
+                (0, set_1.default)(collection, [key, innerKey], (0, utils_1.preparePullRequestTimeline)(pullRequest, reviews, reviewRequests?.[0], statuses, (0, get_1.default)(collection, [key, innerKey], {}), data.events[index] || []));
             });
         });
         (0, utils_1.prepareReviews)(reviews, collection, dateKey, userKey, (0, calculations_1.getPullRequestSize)(pullRequest?.additions, pullRequest?.deletions), teams);
@@ -710,6 +710,74 @@ exports.calcPercentileValue = calcPercentileValue;
 
 /***/ }),
 
+/***/ 59416:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.calcReviewCycles = void 0;
+const normalizeDate = (value) => value ? new Date(value).getTime() : null;
+const calcReviewCycles = (reviews = [], timelineEvents = []) => {
+    const changeRequests = reviews
+        .filter((review) => (review?.state || "").toLowerCase() === "changes_requested" &&
+        (review?.submitted_at || review?.created_at))
+        .sort((a, b) => {
+        const aTime = normalizeDate(a.submitted_at || a.created_at || "");
+        const bTime = normalizeDate(b.submitted_at || b.created_at || "");
+        if (aTime === null || bTime === null) {
+            return 0;
+        }
+        return aTime - bTime;
+    });
+    const commitEvents = timelineEvents
+        .filter((event) => event.event === "committed" && event.created_at)
+        .sort((a, b) => {
+        const aTime = normalizeDate(a.created_at || "");
+        const bTime = normalizeDate(b.created_at || "");
+        if (aTime === null || bTime === null) {
+            return 0;
+        }
+        return aTime - bTime;
+    });
+    let cycleCount = 0;
+    changeRequests.forEach((review) => {
+        const reviewTime = normalizeDate(review.submitted_at || review.created_at);
+        if (reviewTime === null)
+            return;
+        const commitAfter = commitEvents.find((commit) => {
+            const commitTime = normalizeDate(commit.created_at || "");
+            return commitTime !== null && commitTime > reviewTime;
+        });
+        if (commitAfter) {
+            cycleCount += 1;
+        }
+    });
+    const firstChangeRequestTime = changeRequests[0]?.submitted_at ||
+        changeRequests[0]?.created_at ||
+        null;
+    let firstUpdateAfterChangeRequest = null;
+    if (firstChangeRequestTime) {
+        const changeRequestTimeValue = normalizeDate(firstChangeRequestTime);
+        firstUpdateAfterChangeRequest =
+            commitEvents.find((commit) => {
+                const commitTime = normalizeDate(commit.created_at || "");
+                return (commitTime !== null &&
+                    changeRequestTimeValue !== null &&
+                    commitTime > changeRequestTimeValue);
+            })?.created_at || null;
+    }
+    return {
+        cycleCount,
+        firstChangeRequestTime,
+        firstUpdateAfterChangeRequest,
+    };
+};
+exports.calcReviewCycles = calcReviewCycles;
+
+
+/***/ }),
+
 /***/ 54409:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -950,7 +1018,7 @@ exports.getResponses = getResponses;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.checkUserInclusive = exports.deletionCoefficient = exports.getResponses = exports.calcDraftTime = exports.getPullRequestSize = exports.calcAverageValue = exports.calcDifferenceInMinutes = exports.calcMedianValue = exports.calcNonWorkingHours = exports.calcWeekendMinutes = exports.getApproveTime = exports.calcPercentileValue = exports.calcIntervals = exports.prepareIntervals = void 0;
+exports.isAbandonedPullRequest = exports.isStalePullRequest = exports.calcReviewCycles = exports.checkUserInclusive = exports.deletionCoefficient = exports.getResponses = exports.calcDraftTime = exports.getPullRequestSize = exports.calcAverageValue = exports.calcDifferenceInMinutes = exports.calcMedianValue = exports.calcNonWorkingHours = exports.calcWeekendMinutes = exports.getApproveTime = exports.calcPercentileValue = exports.calcIntervals = exports.prepareIntervals = void 0;
 var prepareIntervals_1 = __nccwpck_require__(22723);
 Object.defineProperty(exports, "prepareIntervals", ({ enumerable: true, get: function () { return prepareIntervals_1.prepareIntervals; } }));
 var calcIntervals_1 = __nccwpck_require__(2414);
@@ -979,6 +1047,11 @@ var constants_1 = __nccwpck_require__(51666);
 Object.defineProperty(exports, "deletionCoefficient", ({ enumerable: true, get: function () { return constants_1.deletionCoefficient; } }));
 var checkUserInclusive_1 = __nccwpck_require__(50477);
 Object.defineProperty(exports, "checkUserInclusive", ({ enumerable: true, get: function () { return checkUserInclusive_1.checkUserInclusive; } }));
+var calcReviewCycles_1 = __nccwpck_require__(59416);
+Object.defineProperty(exports, "calcReviewCycles", ({ enumerable: true, get: function () { return calcReviewCycles_1.calcReviewCycles; } }));
+var isStalePullRequest_1 = __nccwpck_require__(61218);
+Object.defineProperty(exports, "isStalePullRequest", ({ enumerable: true, get: function () { return isStalePullRequest_1.isStalePullRequest; } }));
+Object.defineProperty(exports, "isAbandonedPullRequest", ({ enumerable: true, get: function () { return isStalePullRequest_1.isAbandonedPullRequest; } }));
 
 
 /***/ }),
@@ -1000,6 +1073,36 @@ const isHoliday = (date, holidays) => {
     });
 };
 exports.isHoliday = isHoliday;
+
+
+/***/ }),
+
+/***/ 61218:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.isAbandonedPullRequest = exports.isStalePullRequest = void 0;
+const date_fns_1 = __nccwpck_require__(73314);
+const isStalePullRequest = (pullRequest, thresholdDays, now = new Date()) => {
+    if (!pullRequest || !pullRequest.created_at)
+        return false;
+    if (pullRequest.state !== "open")
+        return false;
+    if (!Number.isFinite(thresholdDays) || thresholdDays <= 0) {
+        return false;
+    }
+    const createdAt = (0, date_fns_1.parseISO)(pullRequest.created_at);
+    return (0, date_fns_1.differenceInCalendarDays)(now, createdAt) >= thresholdDays;
+};
+exports.isStalePullRequest = isStalePullRequest;
+const isAbandonedPullRequest = (pullRequest) => {
+    if (!pullRequest)
+        return false;
+    return pullRequest.state === "closed" && !pullRequest.merged;
+};
+exports.isAbandonedPullRequest = isAbandonedPullRequest;
 
 
 /***/ }),
@@ -1037,8 +1140,14 @@ exports.prepareIntervals = prepareIntervals;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.checkRevert = void 0;
-const checkRevert = (branch) => {
-    return /^revert-\d+/.test(branch);
+const checkRevert = (branch, labels) => {
+    const branchIsRevert = typeof branch === "string" ? /^revert-\d+/i.test(branch) : false;
+    const labelIsRevert = Array.isArray(labels)
+        ? labels.some((label) => typeof label?.name === "string"
+            ? /^revert\b/i.test(label.name)
+            : false)
+        : false;
+    return branchIsRevert || labelIsRevert;
 };
 exports.checkRevert = checkRevert;
 
@@ -1342,13 +1451,26 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.preparePullRequestInfo = void 0;
 const calculations_1 = __nccwpck_require__(16576);
 const checkRevert_1 = __nccwpck_require__(37644);
+const utils_1 = __nccwpck_require__(41002);
 const preparePullRequestInfo = (pullRequest, collection) => {
     const previousComments = typeof collection?.comments === "number" ? collection?.comments : 0;
     const comments = previousComments + (pullRequest?.comments || 0);
     const previousReviewComments = typeof collection?.totalReviewComments === "number"
         ? collection?.totalReviewComments
         : 0;
-    const totalReviewComments = previousReviewComments + (pullRequest?.review_comments || 0);
+    const currentReviewComments = pullRequest?.review_comments || 0;
+    const totalReviewComments = previousReviewComments + currentReviewComments;
+    const commitCount = pullRequest?.commits || 0;
+    const changedFiles = pullRequest?.changed_files || 0;
+    const additionsValue = pullRequest?.additions || 0;
+    const deletionsValue = pullRequest?.deletions || 0;
+    const linesChanged = additionsValue + deletionsValue;
+    const commentVolume = currentReviewComments + (pullRequest?.comments || 0);
+    const commentsRatio = linesChanged > 0 ? commentVolume / linesChanged : commentVolume || 0;
+    const staleThreshold = parseInt((0, utils_1.getValueAsIs)("STALE_PR_DAYS_THRESHOLD")) || 14;
+    const isStale = (0, calculations_1.isStalePullRequest)(pullRequest, staleThreshold);
+    const isAbandoned = (0, calculations_1.isAbandonedPullRequest)(pullRequest);
+    const isReverted = (0, checkRevert_1.checkRevert)(pullRequest?.head?.ref, pullRequest?.labels);
     return {
         ...collection,
         opened: (collection?.opened || 0) + 1,
@@ -1360,16 +1482,26 @@ const preparePullRequestInfo = (pullRequest, collection) => {
             : collection?.merged || 0,
         comments,
         totalReviewComments,
-        reverted: typeof pullRequest?.head.ref === "string" &&
-            (0, checkRevert_1.checkRevert)(pullRequest?.head.ref)
-            ? (collection?.reverted || 0) + 1
-            : collection?.reverted || 0,
-        additions: (collection?.additions || 0) + (pullRequest?.additions || 0),
-        deletions: (collection?.deletions || 0) + (pullRequest?.deletions || 0),
+        reverted: (collection?.reverted || 0) + (isReverted ? 1 : 0),
+        additions: (collection?.additions || 0) + additionsValue,
+        deletions: (collection?.deletions || 0) + deletionsValue,
         prSizes: [
             ...(collection?.prSizes || []),
             (0, calculations_1.getPullRequestSize)(pullRequest?.additions, pullRequest?.deletions),
         ],
+        commitCounts: [...(collection?.commitCounts || []), commitCount],
+        changedFilesCounts: [
+            ...(collection?.changedFilesCounts || []),
+            changedFiles,
+        ],
+        linesAddedList: [...(collection?.linesAddedList || []), additionsValue],
+        linesRemovedList: [...(collection?.linesRemovedList || []), deletionsValue],
+        commentsPerLineChangeRatio: [
+            ...(collection?.commentsPerLineChangeRatio || []),
+            Number.isFinite(commentsRatio) ? commentsRatio : 0,
+        ],
+        stalePullRequests: (collection?.stalePullRequests || 0) + (isStale ? 1 : 0),
+        abandonedPullRequests: (collection?.abandonedPullRequests || 0) + (isAbandoned ? 1 : 0),
     };
 };
 exports.preparePullRequestInfo = preparePullRequestInfo;
@@ -1426,6 +1558,8 @@ const preparePullRequestStats = (collection) => {
             timeFromOpenToResponse: (0, calculations_1.calcMedianValue)(collection.timeFromOpenToResponse),
             timeFromRepeatedRequestToResponse: (0, calculations_1.calcMedianValue)(collection.timeFromRepeatedRequestToResponse),
             timeWaitingForRepeatedReview: (0, calculations_1.calcMedianValue)(collection.timeWaitingForRepeatedReview),
+            assignmentTime: (0, calculations_1.calcMedianValue)(collection.assignmentTimes),
+            firstUpdateAfterChangeRequestTime: (0, calculations_1.calcMedianValue)(collection.firstUpdateAfterRequestTimes),
         },
         percentile: {
             timeToReview: (0, calculations_1.calcPercentileValue)(collection.timeToReview),
@@ -1437,6 +1571,8 @@ const preparePullRequestStats = (collection) => {
             timeFromOpenToResponse: (0, calculations_1.calcPercentileValue)(collection.timeFromOpenToResponse),
             timeFromRepeatedRequestToResponse: (0, calculations_1.calcPercentileValue)(collection.timeFromRepeatedRequestToResponse),
             timeWaitingForRepeatedReview: (0, calculations_1.calcPercentileValue)(collection.timeWaitingForRepeatedReview),
+            assignmentTime: (0, calculations_1.calcPercentileValue)(collection.assignmentTimes),
+            firstUpdateAfterChangeRequestTime: (0, calculations_1.calcPercentileValue)(collection.firstUpdateAfterRequestTimes),
         },
         average: {
             timeToReview: (0, calculations_1.calcAverageValue)(collection.timeToReview),
@@ -1448,6 +1584,8 @@ const preparePullRequestStats = (collection) => {
             timeFromOpenToResponse: (0, calculations_1.calcAverageValue)(collection.timeFromOpenToResponse),
             timeFromRepeatedRequestToResponse: (0, calculations_1.calcAverageValue)(collection.timeFromRepeatedRequestToResponse),
             timeWaitingForRepeatedReview: (0, calculations_1.calcAverageValue)(collection.timeWaitingForRepeatedReview),
+            assignmentTime: (0, calculations_1.calcAverageValue)(collection.assignmentTimes),
+            firstUpdateAfterChangeRequestTime: (0, calculations_1.calcAverageValue)(collection.firstUpdateAfterRequestTimes),
         },
     };
 };
@@ -1468,13 +1606,17 @@ const constants_1 = __nccwpck_require__(95354);
 const calculations_1 = __nccwpck_require__(16576);
 const calcDifferenceInMinutes_1 = __nccwpck_require__(72317);
 const calcPRsize_1 = __nccwpck_require__(8722);
-const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], reviewRequest, statuses = [], collection) => {
+const checkRevert_1 = __nccwpck_require__(37644);
+const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], reviewRequest, statuses = [], collection, timelineEvents = []) => {
     if (!(0, calculations_1.checkUserInclusive)(pullRequestInfo?.user?.login || constants_1.invalidUserLogin)) {
         return collection;
     }
     const firstReview = pullRequestReviews?.find((review) => review.user?.login !== pullRequestInfo?.user?.login &&
         (0, calculations_1.checkUserInclusive)(review.user?.login || constants_1.invalidUserLogin));
     const approveTime = (0, calculations_1.getApproveTime)(pullRequestReviews, parseInt((0, utils_1.getValueAsIs)("REQUIRED_APPROVALS")));
+    const reviewRequestTimestamp = reviewRequest?.created_at || null;
+    const assignmentEvent = timelineEvents.find((event) => event.event === "assigned");
+    const assignmentTimestamp = assignmentEvent?.created_at || null;
     const timeToReviewRequest = (0, calcDifferenceInMinutes_1.calcDifferenceInMinutes)(pullRequestInfo?.created_at, reviewRequest?.created_at, {
         endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
         startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
@@ -1497,6 +1639,27 @@ const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], re
         startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
     }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
     const pullRequestSize = (0, calculations_1.getPullRequestSize)(pullRequestInfo?.additions, pullRequestInfo?.deletions);
+    const { cycleCount, firstChangeRequestTime, firstUpdateAfterChangeRequest } = (0, calculations_1.calcReviewCycles)(pullRequestReviews, timelineEvents);
+    const firstUpdateAfterChangeRequestTime = (0, calcDifferenceInMinutes_1.calcDifferenceInMinutes)(firstChangeRequestTime, firstUpdateAfterChangeRequest, {
+        endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
+        startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
+    }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
+    const assignmentTime = (0, calcDifferenceInMinutes_1.calcDifferenceInMinutes)(pullRequestInfo?.created_at, assignmentTimestamp, {
+        endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
+        startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
+    }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
+    const staleThreshold = parseInt((0, utils_1.getValueAsIs)("STALE_PR_DAYS_THRESHOLD")) || 14;
+    const isStale = (0, calculations_1.isStalePullRequest)(pullRequestInfo, staleThreshold);
+    const isAbandoned = (0, calculations_1.isAbandonedPullRequest)(pullRequestInfo);
+    const reverted = (0, checkRevert_1.checkRevert)(pullRequestInfo?.head?.ref, pullRequestInfo?.labels);
+    const reviewComments = pullRequestInfo?.review_comments || 0;
+    const issueComments = pullRequestInfo?.comments || 0;
+    const additions = pullRequestInfo?.additions || 0;
+    const deletions = pullRequestInfo?.deletions || 0;
+    const totalLinesChanged = additions + deletions;
+    const commentsRatio = totalLinesChanged > 0
+        ? (reviewComments + issueComments) / totalLinesChanged
+        : reviewComments + issueComments || 0;
     return {
         ...collection,
         timeToReview: typeof timeToReview === "number"
@@ -1558,8 +1721,56 @@ const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], re
                 timeToReview: timeToReview || 0,
                 timeToApprove: timeToApprove ? timeToApprove - (timeToReview || 0) : 0,
                 timeToMerge: timeToMerge ? timeToMerge - (timeToApprove || 0) : 0,
+                commitCount: pullRequestInfo?.commits || 0,
+                filesChanged: pullRequestInfo?.changed_files || 0,
+                commentsPerLineChangeRatio: Number.isFinite(commentsRatio)
+                    ? commentsRatio
+                    : 0,
+                reviewCycleCount: cycleCount,
+                stalePrFlag: isStale,
+                abandonedPrFlag: isAbandoned,
+                revertedPrFlag: reverted,
+                assignmentTimestamp,
+                reviewRequestTimestamp,
+                firstUpdateAfterChangeRequestTimestamp: firstUpdateAfterChangeRequest || null,
+                approvalTimestamp: approveTime,
+                mergeTimestamp: pullRequestInfo?.merged_at || null,
+                assignmentTime: typeof assignmentTime === "number" ? assignmentTime : 0,
+                firstUpdateAfterChangeRequestTime: typeof firstUpdateAfterChangeRequestTime === "number"
+                    ? firstUpdateAfterChangeRequestTime
+                    : 0,
             },
         ],
+        reviewCycleCounts: typeof cycleCount === "number"
+            ? [...(collection?.reviewCycleCounts || []), cycleCount]
+            : collection?.reviewCycleCounts,
+        firstUpdateAfterRequestTimes: typeof firstUpdateAfterChangeRequestTime === "number"
+            ? [
+                ...(collection?.firstUpdateAfterRequestTimes || []),
+                firstUpdateAfterChangeRequestTime,
+            ]
+            : collection?.firstUpdateAfterRequestTimes,
+        assignmentTimes: typeof assignmentTime === "number"
+            ? [...(collection?.assignmentTimes || []), assignmentTime]
+            : collection?.assignmentTimes,
+        assignmentTimestamps: assignmentTimestamp
+            ? [...(collection?.assignmentTimestamps || []), assignmentTimestamp]
+            : collection?.assignmentTimestamps,
+        reviewRequestTimestamps: reviewRequestTimestamp
+            ? [...(collection?.reviewRequestTimestamps || []), reviewRequestTimestamp]
+            : collection?.reviewRequestTimestamps,
+        firstUpdateAfterRequestTimestamps: firstUpdateAfterChangeRequest
+            ? [
+                ...(collection?.firstUpdateAfterRequestTimestamps || []),
+                firstUpdateAfterChangeRequest,
+            ]
+            : collection?.firstUpdateAfterRequestTimestamps,
+        approvalTimestamps: approveTime
+            ? [...(collection?.approvalTimestamps || []), approveTime]
+            : collection?.approvalTimestamps,
+        mergeTimestamps: pullRequestInfo?.merged_at
+            ? [...(collection?.mergeTimestamps || []), pullRequestInfo?.merged_at]
+            : collection?.mergeTimestamps,
     };
 };
 exports.preparePullRequestTimeline = preparePullRequestTimeline;
@@ -1650,17 +1861,17 @@ const prepareResponseTime = (events = [], pullRequest, collection, dateKey, team
             }
         });
     });
-    Object.entries(responses).forEach(([user, responses]) => {
+    Object.entries(responses).forEach(([user, userResponses]) => {
         ["total", dateKey].forEach((key) => {
-            const timeFromInitialRequestToResponse = (0, calculations_1.calcDifferenceInMinutes)(responses[0]?.[0], responses[0]?.[1], {
+            const timeFromInitialRequestToResponse = (0, calculations_1.calcDifferenceInMinutes)(userResponses[0]?.[0], userResponses[0]?.[1], {
                 endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
                 startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
             }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
-            const timeFromOpenToResponse = (0, calculations_1.calcDifferenceInMinutes)(pullRequest?.created_at, responses[0]?.[1], {
+            const timeFromOpenToResponse = (0, calculations_1.calcDifferenceInMinutes)(pullRequest?.created_at, userResponses[0]?.[1], {
                 endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
                 startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
             }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
-            const timeFromRepeatedRequestToResponse = responses
+            const timeFromRepeatedRequestToResponse = userResponses
                 .filter((el, index) => index > 0)
                 .map((element) => (0, calculations_1.calcDifferenceInMinutes)(element?.[0], element?.[1], {
                 endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
@@ -1690,6 +1901,18 @@ const prepareResponseTime = (events = [], pullRequest, collection, dateKey, team
                 }
             });
         });
+        const pendingReviewCount = userResponses.filter((response) => Array.isArray(response) &&
+            (response.length < 2 || typeof response[1] === "undefined")).length;
+        if (pendingReviewCount > 0) {
+            ["total", dateKey].forEach((key) => {
+                ["total", user, ...(teams[user] || [])].forEach((userKey) => {
+                    if ((0, calculations_1.checkUserInclusive)(userKey)) {
+                        (0, set_1.default)(collection, [userKey, key, "reviewsPending"], (0, get_1.default)(collection, [userKey, key, "reviewsPending"], 0) +
+                            pendingReviewCount);
+                    }
+                });
+            });
+        }
     });
 };
 exports.prepareResponseTime = prepareResponseTime;
@@ -2769,7 +2992,7 @@ Object.defineProperty(exports, "createList", ({ enumerable: true, get: function 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.timeFromRepeatedRequestToResponseHeader = exports.timeFromOpenToResponseHeader = exports.timeFromRequestToResponseHeader = exports.prSizesHeader = exports.requestChangesReceived = exports.reviewTypesHeader = exports.commentsReceivedHeader = exports.commentsConductedHeader = exports.discussionsConductedHeader = exports.discussionsHeader = exports.reviewRequestConductedHeader = exports.reviewConductedHeader = exports.unapprovedPrsHeader = exports.unreviewedPrsHeader = exports.additionsDeletionsHeader = exports.totalRevertedPrsHeader = exports.totalOpenedPrsHeader = exports.totalMergedPrsHeader = exports.timeToMergeHeader = exports.timeAwaitingRepeatedReviewHeader = exports.timeToApproveHeader = exports.timeToReviewHeader = exports.timeInDraftHeader = exports.timeToReviewRequestHeader = void 0;
+exports.firstUpdateAfterChangeRequestHeader = exports.assignmentTimeHeader = exports.pendingReviewsHeader = exports.reviewCyclesHeader = exports.commentsPerLineHeader = exports.staleAbandonedHeader = exports.commitsFilesChangedHeader = exports.timeFromRepeatedRequestToResponseHeader = exports.timeFromOpenToResponseHeader = exports.timeFromRequestToResponseHeader = exports.prSizesHeader = exports.requestChangesReceived = exports.reviewTypesHeader = exports.commentsReceivedHeader = exports.commentsConductedHeader = exports.discussionsConductedHeader = exports.discussionsHeader = exports.reviewRequestConductedHeader = exports.reviewConductedHeader = exports.unapprovedPrsHeader = exports.unreviewedPrsHeader = exports.additionsDeletionsHeader = exports.totalRevertedPrsHeader = exports.totalOpenedPrsHeader = exports.totalMergedPrsHeader = exports.timeToMergeHeader = exports.timeAwaitingRepeatedReviewHeader = exports.timeToApproveHeader = exports.timeToReviewHeader = exports.timeInDraftHeader = exports.timeToReviewRequestHeader = void 0;
 exports.timeToReviewRequestHeader = "Time to review request";
 exports.timeInDraftHeader = "Time in draft";
 exports.timeToReviewHeader = "Time to review";
@@ -2794,6 +3017,13 @@ exports.prSizesHeader = "PR size: xs/s/m/l/xl";
 exports.timeFromRequestToResponseHeader = "Time from initial request to response";
 exports.timeFromOpenToResponseHeader = "Time from opening to response";
 exports.timeFromRepeatedRequestToResponseHeader = "Time from re-request to response";
+exports.commitsFilesChangedHeader = "Avg commits / files changed";
+exports.staleAbandonedHeader = "Stale / Abandoned PRs";
+exports.commentsPerLineHeader = "Comments per line changed";
+exports.reviewCyclesHeader = "Review cycles";
+exports.pendingReviewsHeader = "Pending review requests";
+exports.assignmentTimeHeader = "Time to assignment";
+exports.firstUpdateAfterChangeRequestHeader = "Time to first update after change request";
 
 
 /***/ }),
@@ -3092,6 +3322,12 @@ const createPullRequestQualityTable = (data, users, date) => {
         data[user]?.[date]?.reviewComments ||
         data["total"]?.[date]?.reviewsConducted?.[user]?.["changes_requested"])
         .map((user) => {
+        const commentsRatioList = data[user]?.[date]?.commentsPerLineChangeRatio || [];
+        const commentsRatio = commentsRatioList.length > 0
+            ? (commentsRatioList.reduce((acc, value) => acc + value, 0) /
+                commentsRatioList.length).toFixed(2)
+            : "0";
+        const reviewCycleTotal = data[user]?.[date]?.reviewCycleCounts?.reduce((acc, value) => acc + value, 0) || 0;
         return [
             `**${user}**`,
             data[user]?.[date]?.merged?.toString() || "0",
@@ -3099,6 +3335,8 @@ const createPullRequestQualityTable = (data, users, date) => {
             `${data[user]?.[date]?.discussions?.received?.agreed?.toString() || "0"} / ${data[user]?.[date]?.discussions?.received?.disagreed?.toString() ||
                 "0"} / ${data[user]?.[date]?.discussions?.received?.total?.toString() || "0"}`,
             data[user]?.[date]?.reviewComments?.toString() || "0",
+            commentsRatio,
+            reviewCycleTotal.toString(),
         ];
     });
     const items = data.total?.[date]?.pullRequestsInfo
@@ -3112,7 +3350,7 @@ const createPullRequestQualityTable = (data, users, date) => {
     return [
         (0, common_1.createTable)({
             title: `Pull request quality ${date}`,
-            description: "**Agreed** - discussions with at least 1 reaction :+1:.\n**Disagreed** - discussions with at least 1 reaction :-1:.",
+            description: "**Agreed** - discussions with at least 1 reaction :+1:.\n**Disagreed** - discussions with at least 1 reaction :-1:.\n**Comments per line changed** - average ratio of review comments to the total lines touched in a PR.\n**Review cycles** - number of change-request loops that required additional commits.",
             table: {
                 headers: [
                     "user",
@@ -3120,6 +3358,8 @@ const createPullRequestQualityTable = (data, users, date) => {
                     constants_1.requestChangesReceived,
                     constants_1.discussionsHeader,
                     constants_1.commentsReceivedHeader,
+                    constants_1.commentsPerLineHeader,
+                    constants_1.reviewCyclesHeader,
                 ],
                 rows: tableRowsTotal,
             },
@@ -3188,11 +3428,14 @@ const createResponseTable = (data, users, date) => {
                     ?.timeFromInitialRequestToResponse || 0),
                 (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]
                     ?.timeFromRepeatedRequestToResponse || 0),
+                (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.assignmentTime || 0),
+                (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]
+                    ?.firstUpdateAfterChangeRequestTime || 0),
             ];
         });
         return (0, common_1.createTable)({
             title: `Review Response Time(${type === "percentile" ? parseInt((0, utils_1.getValueAsIs)("PERCENTILE")) : ""}${type === "percentile" ? "th " : ""}${type}) ${date}`,
-            description: "**Time from re-request to response** - time from a review re-request to the response. Multiple re-requests and responses can occur in a single pull request",
+            description: "**Time from re-request to response** - time from a review re-request to the response. Multiple re-requests and responses can occur in a single pull request.\n**Time to assignment** - time from PR creation to the first assignment event.\n**Time to first update after change request** - how long it took the author to push a new commit after the first changes requested review.",
             table: {
                 headers: [
                     "user",
@@ -3201,6 +3444,8 @@ const createResponseTable = (data, users, date) => {
                     constants_1.timeFromOpenToResponseHeader,
                     constants_1.timeFromRequestToResponseHeader,
                     constants_1.timeFromRepeatedRequestToResponseHeader,
+                    constants_1.assignmentTimeHeader,
+                    constants_1.firstUpdateAfterChangeRequestHeader,
                 ].filter((header, index) => tableRows.some((row) => row[index])),
                 rows: tableRows.map((row) => row.filter((cell, index) => tableRows.some((row) => row[index]))),
             },
@@ -3222,16 +3467,24 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.createReviewTable = void 0;
 const constants_1 = __nccwpck_require__(11474);
 const common_1 = __nccwpck_require__(64682);
+const utils_1 = __nccwpck_require__(41002);
 const createReviewTable = (data, users, date) => {
     const sizes = ["xs", "s", "m", "l", "xl"];
+    const pendingThreshold = parseInt((0, utils_1.getValueAsIs)("REVIEWER_MAX_PENDING_THRESHOLD")) || 5;
     const tableRowsTotal = users
         .filter((user) => data[user]?.[date]?.reviewsConducted?.total?.total ||
         data[user]?.[date]?.commentsConducted ||
-        data[user]?.[date]?.discussions?.conducted?.total)
+        data[user]?.[date]?.discussions?.conducted?.total ||
+        data[user]?.[date]?.reviewsPending)
         .map((user) => {
+        const pendingCount = data[user]?.[date]?.reviewsPending || 0;
+        const pendingDisplay = pendingCount > 0
+            ? `${pendingCount}${pendingCount >= pendingThreshold ? " ⚠️" : ""}`
+            : "0";
         return [
             `**${user}**`,
             data[user]?.[date]?.reviewsConducted?.total?.total?.toString() || "0",
+            pendingDisplay,
             `${data[user]?.[date]?.discussions?.conducted?.agreed?.toString() || "0"} / ${data[user]?.[date]?.discussions?.conducted?.disagreed?.toString() ||
                 "0"} / ${data[user]?.[date]?.discussions?.conducted?.total?.toString() || "0"}`,
             data[user]?.[date]?.commentsConducted?.toString() || "0",
@@ -3244,11 +3497,12 @@ const createReviewTable = (data, users, date) => {
     });
     return (0, common_1.createTable)({
         title: `Code review engagement ${date}`,
-        description: "**PR Size** - determined using the formula: `additions + deletions * 0.2`. Based on this calculation: 0-50: xs, 51-200: s, 201-400: m, 401-700: l, 701+: xl\n**Changes requested / Comments / Approvals** - number of reviews conducted by user. For a single pull request, only one review of each status will be counted for a user.\n**Agreed** - discussions with at least 1 reaction :+1:.\n**Disagreed** - discussions with at least 1 reaction :-1:.",
+        description: "**PR Size** - determined using the formula: `additions + deletions * 0.2`. Based on this calculation: 0-50: xs, 51-200: s, 201-400: m, 401-700: l, 701+: xl\n**Changes requested / Comments / Approvals** - number of reviews conducted by user. For a single pull request, only one review of each status will be counted for a user.\n**Agreed** - discussions with at least 1 reaction :+1:.\n**Disagreed** - discussions with at least 1 reaction :-1:.\n**Pending review requests** - review requests awaiting a response. Values above the configured threshold are flagged with ⚠️.",
         table: {
             headers: [
                 "user",
                 constants_1.reviewConductedHeader,
+                constants_1.pendingReviewsHeader,
                 constants_1.discussionsConductedHeader,
                 constants_1.commentsConductedHeader,
                 constants_1.prSizesHeader,
@@ -3670,9 +3924,11 @@ const createTimelineTable = (data, type, users, date) => {
         return [
             `**${user}**`,
             (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.timeInDraft || 0),
+            (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.assignmentTime || 0),
             (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.timeToReviewRequest || 0),
             (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.timeToReview || 0),
             (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.timeWaitingForRepeatedReview || 0),
+            (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.firstUpdateAfterChangeRequestTime || 0),
             (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.timeToApprove || 0),
             (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.timeToMerge || 0),
             data[user]?.[date]?.merged?.toString() || "0",
@@ -3680,14 +3936,16 @@ const createTimelineTable = (data, type, users, date) => {
     });
     const pullRequestTimeLine = (0, common_1.createTable)({
         title: `Pull requests timeline(${type === "percentile" ? parseInt((0, utils_1.getValueAsIs)("PERCENTILE")) : ""}${type === "percentile" ? "th " : ""}${type}) ${date}`,
-        description: "**Time to review** - time from PR creation to first review. \n**Time to approve** - time from PR creation to first approval without requested changes. \n**Time to merge** - time from PR creation to merge.",
+        description: "**Time to assignment** - time from PR creation to the first assignment event. \n**Time to review** - time from PR creation to first review. \n**Time to approve** - time from PR creation to first approval without requested changes. \n**Time to merge** - time from PR creation to merge. \n**Time to first update after change request** - time between the first changes requested review and the first subsequent commit.",
         table: {
             headers: [
                 "user",
                 constants_1.timeInDraftHeader,
+                constants_1.assignmentTimeHeader,
                 constants_1.timeToReviewRequestHeader,
                 constants_1.timeToReviewHeader,
                 constants_1.timeAwaitingRepeatedReviewHeader,
+                constants_1.firstUpdateAfterChangeRequestHeader,
                 constants_1.timeToApproveHeader,
                 constants_1.timeToMergeHeader,
                 constants_1.totalMergedPrsHeader,
@@ -3717,14 +3975,28 @@ const createTotalTable = (data, users, date) => {
     const tableRowsTotal = users
         .filter((user) => data[user]?.[date]?.opened)
         .map((user) => {
+        const commitCounts = data[user]?.[date]?.commitCounts || [];
+        const changedFilesCounts = data[user]?.[date]?.changedFilesCounts || [];
+        const commitsAvg = commitCounts.length > 0
+            ? (commitCounts.reduce((acc, value) => acc + value, 0) /
+                commitCounts.length).toFixed(1)
+            : "0";
+        const changedFilesAvg = changedFilesCounts.length > 0
+            ? (changedFilesCounts.reduce((acc, value) => acc + value, 0) /
+                changedFilesCounts.length).toFixed(1)
+            : "0";
+        const staleCount = data[user]?.[date]?.stalePullRequests || 0;
+        const abandonedCount = data[user]?.[date]?.abandonedPullRequests || 0;
         return [
             `**${user}**`,
             data[user]?.[date]?.opened?.toString() || "0",
             data[user]?.[date]?.merged?.toString() || "0",
             data[user]?.[date]?.reverted?.toString() || "0",
+            `${staleCount} / ${abandonedCount}`,
             data[user]?.[date]?.unreviewed?.toString() || "0",
             data[user]?.[date]?.unapproved?.toString() || "0",
             `+${data[user]?.[date].additions || 0}/-${data[user]?.[date].deletions || 0}`,
+            `${commitsAvg} / ${changedFilesAvg}`,
             `${sizes
                 .map((size) => data[user]?.[date]?.prSizes?.filter((prSize) => prSize === size)
                 .length || 0)
@@ -3742,16 +4014,18 @@ const createTotalTable = (data, users, date) => {
     return [
         (0, common_1.createTable)({
             title: `Contribution stats ${date}`,
-            description: "**Reviews conducted** - number of reviews conducted. 1 PR may have only single review.\n**PR Size** - determined using the formula: `additions + deletions * 0.2`. Based on this calculation: 0-50: xs, 51-200: s, 201-400: m, 401-700: l, 701+: xl\n**Total reverted PRs** - The number of reverted PRs based on the branch name pattern `/^revert-d+/`. This pattern is used for reverts made via GitHub.",
+            description: "**Reviews conducted** - number of reviews conducted. 1 PR may have only single review.\n**PR Size** - determined using the formula: `additions + deletions * 0.2`. Based on this calculation: 0-50: xs, 51-200: s, 201-400: m, 401-700: l, 701+: xl\n**Total reverted PRs** - The number of reverted PRs based on the branch name pattern `/^revert-d+/`. This pattern is used for reverts made via GitHub.\n**Stale / Abandoned PRs** - PRs that were open longer than the configured threshold or were closed without merging.\n**Avg commits / files changed** - arithmetic mean per PR that helps highlight authors who send noisy updates.",
             table: {
                 headers: [
                     "user",
                     constants_1.totalOpenedPrsHeader,
                     constants_1.totalMergedPrsHeader,
                     constants_1.totalRevertedPrsHeader,
+                    constants_1.staleAbandonedHeader,
                     constants_1.unreviewedPrsHeader,
                     constants_1.unapprovedPrsHeader,
                     constants_1.additionsDeletionsHeader,
+                    constants_1.commitsFilesChangedHeader,
                     constants_1.prSizesHeader,
                 ],
                 rows: tableRowsTotal,
