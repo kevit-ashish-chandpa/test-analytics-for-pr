@@ -13,6 +13,9 @@ jobs:
         name: 'Create report'
         runs-on: ubuntu-latest
         steps:
+            - name: 'Checkout repository'
+              uses: actions/checkout@v4
+
             - id: analytics
               name: 'Run script for analytics'
               uses: kevit-ashish-chandpa/test-analytics-for-pr@v2
