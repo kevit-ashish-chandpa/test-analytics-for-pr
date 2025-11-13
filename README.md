@@ -190,7 +190,7 @@ To give a fuller picture of how work flows through reviews, the report now inclu
 - **Review cycles** – each time a reviewer requests changes and the author pushes an update we count a new cycle; totals are displayed in the PR quality table and exposed via `reviewCycleCounts`.
 - **Stale vs. abandoned PRs** – PRs that stay open longer than `STALE_PR_DAYS_THRESHOLD` or close without merging increment `stalePullRequests`/`abandonedPullRequests` and show up in the workload table's *Stale / Abandoned PRs* column.
 - **Reviewer overload & pending counts** – `reviewsPending` aggregates open review requests per reviewer and the Code Review Engagement table highlights values that exceed `REVIEWER_MAX_PENDING_THRESHOLD` with ⚠️.
-- **Timeline checkpoints** – new `Time to assignment` and `Time to first update after change request` columns quantify the creation → assignment → review-request → rework timeline, while each PR entry now stores the corresponding timestamps (`assignmentTimestamp`, `reviewRequestTimestamp`, `firstUpdateAfterChangeRequestTimestamp`, `approvalTimestamp`, `mergeTimestamp`).
+- **Timeline checkpoints** – new `Time to assignment`, `Assignment → Review request`, `Review request → Changes requested`, `Change request → Update`, `Update → Approval`, and `Approval → Merge` columns quantify each stage of the review lifecycle, while each PR entry stores the corresponding timestamps (`assignmentTimestamp`, `reviewRequestTimestamp`, `firstUpdateAfterChangeRequestTimestamp`, `approvalTimestamp`, `mergeTimestamp`).
 - **Reverted PR flagging** – the reverted counter and the per-PR `revertedPrFlag` now detect both `revert-*` branches and labels named `revert`, making reverted work easier to audit.
 
 ## Getting started
@@ -327,7 +327,11 @@ Below is a table describing the possible outputs of **pull-request-analytics-act
       "reviewCycleCounts": [1, 0],
       "stalePullRequests": 1,
       "assignmentTimes": [35],
+      "assignmentToReviewRequestTimes": [10],
+      "reviewRequestToChangeRequestTimes": [45],
       "firstUpdateAfterRequestTimes": [120],
+      "updateToApprovalTimes": [90],
+      "approvalToMergeTimes": [60],
       "pullRequestsInfo": [
         {
           "number": 42,
@@ -340,7 +344,11 @@ Below is a table describing the possible outputs of **pull-request-analytics-act
           "reviewRequestTimestamp": "2024-05-06T10:05:00Z",
           "firstUpdateAfterChangeRequestTimestamp": "2024-05-07T08:15:00Z",
           "approvalTimestamp": "2024-05-07T14:00:00Z",
-          "mergeTimestamp": "2024-05-08T09:45:00Z"
+          "mergeTimestamp": "2024-05-08T09:45:00Z",
+          "assignmentToReviewRequest": 10,
+          "reviewRequestToChangeRequest": 45,
+          "updateToApproval": 90,
+          "approvalToMerge": 60
         }
       ]
     }

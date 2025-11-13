@@ -77,9 +77,17 @@ export const preparePullRequestStats = (collection: Collection) => {
         collection.timeWaitingForRepeatedReview
       ),
       assignmentTime: calcMedianValue(collection.assignmentTimes),
+      assignmentToReviewRequest: calcMedianValue(
+        collection.assignmentToReviewRequestTimes
+      ),
+      reviewRequestToChangeRequest: calcMedianValue(
+        collection.reviewRequestToChangeRequestTimes
+      ),
       firstUpdateAfterChangeRequestTime: calcMedianValue(
         collection.firstUpdateAfterRequestTimes
       ),
+      updateToApproval: calcMedianValue(collection.updateToApprovalTimes),
+      approvalToMerge: calcMedianValue(collection.approvalToMergeTimes),
     },
     percentile: {
       timeToReview: calcPercentileValue(collection.timeToReview),
@@ -100,9 +108,17 @@ export const preparePullRequestStats = (collection: Collection) => {
         collection.timeWaitingForRepeatedReview
       ),
       assignmentTime: calcPercentileValue(collection.assignmentTimes),
+      assignmentToReviewRequest: calcPercentileValue(
+        collection.assignmentToReviewRequestTimes
+      ),
+      reviewRequestToChangeRequest: calcPercentileValue(
+        collection.reviewRequestToChangeRequestTimes
+      ),
       firstUpdateAfterChangeRequestTime: calcPercentileValue(
         collection.firstUpdateAfterRequestTimes
       ),
+      updateToApproval: calcPercentileValue(collection.updateToApprovalTimes),
+      approvalToMerge: calcPercentileValue(collection.approvalToMergeTimes),
     },
     average: {
       timeToReview: calcAverageValue(collection.timeToReview),
@@ -123,9 +139,17 @@ export const preparePullRequestStats = (collection: Collection) => {
         collection.timeWaitingForRepeatedReview
       ),
       assignmentTime: calcAverageValue(collection.assignmentTimes),
+      assignmentToReviewRequest: calcAverageValue(
+        collection.assignmentToReviewRequestTimes
+      ),
+      reviewRequestToChangeRequest: calcAverageValue(
+        collection.reviewRequestToChangeRequestTimes
+      ),
       firstUpdateAfterChangeRequestTime: calcAverageValue(
         collection.firstUpdateAfterRequestTimes
       ),
+      updateToApproval: calcAverageValue(collection.updateToApprovalTimes),
+      approvalToMerge: calcAverageValue(collection.approvalToMergeTimes),
     },
   };
 };

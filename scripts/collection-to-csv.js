@@ -68,6 +68,16 @@ Object.entries(data || {}).forEach(([user, dates]) => {
       ),
       reviewer_pending: metrics.reviewsPending || 0,
       comments_per_line_ratio: average(metrics.commentsPerLineChangeRatio),
+      assignment_avg_minutes: average(metrics.assignmentTimes),
+      assignment_to_review_request_avg: average(
+        metrics.assignmentToReviewRequestTimes
+      ),
+      review_request_to_change_request_avg: average(
+        metrics.reviewRequestToChangeRequestTimes
+      ),
+      change_request_to_update_avg: average(metrics.firstUpdateAfterRequestTimes),
+      update_to_approval_avg: average(metrics.updateToApprovalTimes),
+      approval_to_merge_avg: average(metrics.approvalToMergeTimes),
     });
   });
 });
@@ -86,6 +96,12 @@ const headers = [
   "review_cycle_total",
   "reviewer_pending",
   "comments_per_line_ratio",
+  "assignment_avg_minutes",
+  "assignment_to_review_request_avg",
+  "review_request_to_change_request_avg",
+  "change_request_to_update_avg",
+  "update_to_approval_avg",
+  "approval_to_merge_avg",
 ];
 
 const csv = toCsv(rows, headers);

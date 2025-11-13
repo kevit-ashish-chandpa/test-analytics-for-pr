@@ -16,6 +16,10 @@ type TimelinePoints = {
   timeWaitingForRepeatedReview?: number;
   assignmentTime?: number;
   firstUpdateAfterChangeRequestTime?: number;
+  assignmentToReviewRequest?: number;
+  reviewRequestToChangeRequest?: number;
+  updateToApproval?: number;
+  approvalToMerge?: number;
 };
 
 type DiscussionResult = {
@@ -58,6 +62,10 @@ type PullRequestTimelineInfo = {
   mergeTimestamp?: string | null;
   assignmentTime?: number;
   firstUpdateAfterChangeRequestTime?: number;
+  assignmentToReviewRequest?: number;
+  reviewRequestToChangeRequest?: number;
+  updateToApproval?: number;
+  approvalToMerge?: number;
 };
 
 type Discussion = {
@@ -153,4 +161,8 @@ export type Collection = {
   firstUpdateAfterRequestTimestamps?: string[];
   approvalTimestamps?: string[];
   mergeTimestamps?: string[];
+  assignmentToReviewRequestTimes?: number[];
+  reviewRequestToChangeRequestTimes?: number[];
+  updateToApprovalTimes?: number[];
+  approvalToMergeTimes?: number[];
 };

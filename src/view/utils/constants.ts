@@ -35,3 +35,9 @@ export const pendingReviewsHeader = "Pending review requests";
 export const assignmentTimeHeader = "Time to assignment";
 export const firstUpdateAfterChangeRequestHeader =
   "Time to first update after change request";
+export const assignmentToReviewRequestHeader =
+  "Assignment → Review request";
+export const reviewRequestToChangeHeader =
+  "Review request → Changes requested";
+export const updateToApprovalHeader = "Update → Approval";
+export const approvalToMergeHeader = "Approval → Merge";

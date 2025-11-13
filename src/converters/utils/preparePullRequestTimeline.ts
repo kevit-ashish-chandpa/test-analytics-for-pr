@@ -126,6 +126,42 @@ export const preparePullRequestTimeline = (
     },
     getMultipleValuesInput("HOLIDAYS")
   );
+  const assignmentToReviewRequest = calcDifferenceInMinutes(
+    assignmentTimestamp,
+    reviewRequestTimestamp,
+    {
+      endOfWorkingTime: getValueAsIs("CORE_HOURS_END"),
+      startOfWorkingTime: getValueAsIs("CORE_HOURS_START"),
+    },
+    getMultipleValuesInput("HOLIDAYS")
+  );
+  const reviewRequestToChangeRequest = calcDifferenceInMinutes(
+    reviewRequestTimestamp,
+    firstChangeRequestTime,
+    {
+      endOfWorkingTime: getValueAsIs("CORE_HOURS_END"),
+      startOfWorkingTime: getValueAsIs("CORE_HOURS_START"),
+    },
+    getMultipleValuesInput("HOLIDAYS")
+  );
+  const updateToApproval = calcDifferenceInMinutes(
+    firstUpdateAfterChangeRequest,
+    approveTime,
+    {
+      endOfWorkingTime: getValueAsIs("CORE_HOURS_END"),
+      startOfWorkingTime: getValueAsIs("CORE_HOURS_START"),
+    },
+    getMultipleValuesInput("HOLIDAYS")
+  );
+  const approvalToMerge = calcDifferenceInMinutes(
+    approveTime,
+    pullRequestInfo?.merged_at,
+    {
+      endOfWorkingTime: getValueAsIs("CORE_HOURS_END"),
+      startOfWorkingTime: getValueAsIs("CORE_HOURS_START"),
+    },
+    getMultipleValuesInput("HOLIDAYS")
+  );
   const staleThreshold = parseInt(getValueAsIs("STALE_PR_DAYS_THRESHOLD")) || 14;
   const isStale = isStalePullRequest(pullRequestInfo, staleThreshold);
   const isAbandoned = isAbandonedPullRequest(pullRequestInfo);
@@ -234,6 +270,18 @@ export const preparePullRequestTimeline = (
           typeof firstUpdateAfterChangeRequestTime === "number"
             ? firstUpdateAfterChangeRequestTime
             : 0,
+        assignmentToReviewRequest:
+          typeof assignmentToReviewRequest === "number"
+            ? assignmentToReviewRequest
+            : 0,
+        reviewRequestToChangeRequest:
+          typeof reviewRequestToChangeRequest === "number"
+            ? reviewRequestToChangeRequest
+            : 0,
+        updateToApproval:
+          typeof updateToApproval === "number" ? updateToApproval : 0,
+        approvalToMerge:
+          typeof approvalToMerge === "number" ? approvalToMerge : 0,
       },
     ],
     reviewCycleCounts:
@@ -269,5 +317,27 @@ export const preparePullRequestTimeline = (
     mergeTimestamps: pullRequestInfo?.merged_at
       ? [...(collection?.mergeTimestamps || []), pullRequestInfo?.merged_at]
       : collection?.mergeTimestamps,
+    assignmentToReviewRequestTimes:
+      typeof assignmentToReviewRequest === "number"
+        ? [
+            ...(collection?.assignmentToReviewRequestTimes || []),
+            assignmentToReviewRequest,
+          ]
+        : collection?.assignmentToReviewRequestTimes,
+    reviewRequestToChangeRequestTimes:
+      typeof reviewRequestToChangeRequest === "number"
+        ? [
+            ...(collection?.reviewRequestToChangeRequestTimes || []),
+            reviewRequestToChangeRequest,
+          ]
+        : collection?.reviewRequestToChangeRequestTimes,
+    updateToApprovalTimes:
+      typeof updateToApproval === "number"
+        ? [...(collection?.updateToApprovalTimes || []), updateToApproval]
+        : collection?.updateToApprovalTimes,
+    approvalToMergeTimes:
+      typeof approvalToMerge === "number"
+        ? [...(collection?.approvalToMergeTimes || []), approvalToMerge]
+        : collection?.approvalToMergeTimes,
   };
 };

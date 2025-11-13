@@ -1,7 +1,10 @@
 import { Collection } from "../../converters/types";
 import {
+  approvalToMergeHeader,
   assignmentTimeHeader,
+  assignmentToReviewRequestHeader,
   firstUpdateAfterChangeRequestHeader,
+  reviewRequestToChangeHeader,
   timeAwaitingRepeatedReviewHeader,
   timeInDraftHeader,
   timeToApproveHeader,
@@ -9,6 +12,7 @@ import {
   timeToReviewHeader,
   timeToReviewRequestHeader,
   totalMergedPrsHeader,
+  updateToApprovalHeader,
 } from "./constants";
 import { createTable } from "./common";
 import { formatMinutesDuration } from "./formatMinutesDuration";
@@ -31,6 +35,9 @@ export const createTimelineTable = (
           data[user]?.[date]?.[type]?.assignmentTime || 0
         ),
         formatMinutesDuration(
+          data[user]?.[date]?.[type]?.assignmentToReviewRequest || 0
+        ),
+        formatMinutesDuration(
           data[user]?.[date]?.[type]?.timeToReviewRequest || 0
         ),
         formatMinutesDuration(data[user]?.[date]?.[type]?.timeToReview || 0),
@@ -39,6 +46,15 @@ export const createTimelineTable = (
         ),
         formatMinutesDuration(
           data[user]?.[date]?.[type]?.firstUpdateAfterChangeRequestTime || 0
+        ),
+        formatMinutesDuration(
+          data[user]?.[date]?.[type]?.reviewRequestToChangeRequest || 0
+        ),
+        formatMinutesDuration(
+          data[user]?.[date]?.[type]?.updateToApproval || 0
+        ),
+        formatMinutesDuration(
+          data[user]?.[date]?.[type]?.approvalToMerge || 0
         ),
         formatMinutesDuration(data[user]?.[date]?.[type]?.timeToApprove || 0),
         formatMinutesDuration(data[user]?.[date]?.[type]?.timeToMerge || 0),
@@ -51,16 +67,20 @@ export const createTimelineTable = (
       type === "percentile" ? parseInt(getValueAsIs("PERCENTILE")) : ""
     }${type === "percentile" ? "th " : ""}${type}) ${date}`,
     description:
-      "**Time to assignment** - time from PR creation to the first assignment event. \n**Time to review** - time from PR creation to first review. \n**Time to approve** - time from PR creation to first approval without requested changes. \n**Time to merge** - time from PR creation to merge. \n**Time to first update after change request** - time between the first changes requested review and the first subsequent commit.",
+      "**Time to assignment** - time from PR creation to the first assignment event. \n**Assignment → Review request** - time between first assignment and first review request. \n**Review request → Changes requested** - time from the first review request until the first changes-requested review. \n**Time to first update after change request** - time between the first changes requested review and the first subsequent commit. \n**Update → Approval** - time from that follow-up commit until approval. \n**Approval → Merge** - time between approval and merge. Remaining columns show the traditional creation → review/approval/merge durations.",
     table: {
       headers: [
         "user",
         timeInDraftHeader,
         assignmentTimeHeader,
+        assignmentToReviewRequestHeader,
         timeToReviewRequestHeader,
         timeToReviewHeader,
         timeAwaitingRepeatedReviewHeader,
         firstUpdateAfterChangeRequestHeader,
+        reviewRequestToChangeHeader,
+        updateToApprovalHeader,
+        approvalToMergeHeader,
         timeToApproveHeader,
         timeToMergeHeader,
         totalMergedPrsHeader,
