@@ -13,7 +13,8 @@ jobs:
         name: 'Create report'
         runs-on: ubuntu-latest
         steps:
-            - name: 'Run script for analytics'
+            - id: analytics
+              name: 'Run script for analytics'
               uses: kevit-ashish-chandpa/test-analytics-for-pr@v2
               with:
                   GITHUB_TOKEN: ${{ secrets.PERSONAL_TOKEN }} # In the case of a personal access token, it needs to be added to the repository's secrets and used in this field.
@@ -33,3 +34,14 @@ jobs:
                   STALE_PR_DAYS_THRESHOLD: '14' # Optional: tweak if you want a shorter/longer stale window
                   REVIEWER_MAX_PENDING_THRESHOLD: '5' # Optional: change to the warning limit that makes sense for your team
                   EXECUTION_OUTCOME: 'collection'
+            - name: 'Store JSON collection'
+              if: always()
+              run: |
+                  mkdir -p reports
+                  echo '${{ steps.analytics.outputs.JSON_COLLECTION }}' > reports/collection.json
+            - name: 'Upload JSON artifact'
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: pr-analytics-collection
+                  path: reports/collection.json
