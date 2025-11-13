@@ -1559,7 +1559,11 @@ const preparePullRequestStats = (collection) => {
             timeFromRepeatedRequestToResponse: (0, calculations_1.calcMedianValue)(collection.timeFromRepeatedRequestToResponse),
             timeWaitingForRepeatedReview: (0, calculations_1.calcMedianValue)(collection.timeWaitingForRepeatedReview),
             assignmentTime: (0, calculations_1.calcMedianValue)(collection.assignmentTimes),
+            assignmentToReviewRequest: (0, calculations_1.calcMedianValue)(collection.assignmentToReviewRequestTimes),
+            reviewRequestToChangeRequest: (0, calculations_1.calcMedianValue)(collection.reviewRequestToChangeRequestTimes),
             firstUpdateAfterChangeRequestTime: (0, calculations_1.calcMedianValue)(collection.firstUpdateAfterRequestTimes),
+            updateToApproval: (0, calculations_1.calcMedianValue)(collection.updateToApprovalTimes),
+            approvalToMerge: (0, calculations_1.calcMedianValue)(collection.approvalToMergeTimes),
         },
         percentile: {
             timeToReview: (0, calculations_1.calcPercentileValue)(collection.timeToReview),
@@ -1572,7 +1576,11 @@ const preparePullRequestStats = (collection) => {
             timeFromRepeatedRequestToResponse: (0, calculations_1.calcPercentileValue)(collection.timeFromRepeatedRequestToResponse),
             timeWaitingForRepeatedReview: (0, calculations_1.calcPercentileValue)(collection.timeWaitingForRepeatedReview),
             assignmentTime: (0, calculations_1.calcPercentileValue)(collection.assignmentTimes),
+            assignmentToReviewRequest: (0, calculations_1.calcPercentileValue)(collection.assignmentToReviewRequestTimes),
+            reviewRequestToChangeRequest: (0, calculations_1.calcPercentileValue)(collection.reviewRequestToChangeRequestTimes),
             firstUpdateAfterChangeRequestTime: (0, calculations_1.calcPercentileValue)(collection.firstUpdateAfterRequestTimes),
+            updateToApproval: (0, calculations_1.calcPercentileValue)(collection.updateToApprovalTimes),
+            approvalToMerge: (0, calculations_1.calcPercentileValue)(collection.approvalToMergeTimes),
         },
         average: {
             timeToReview: (0, calculations_1.calcAverageValue)(collection.timeToReview),
@@ -1585,7 +1593,11 @@ const preparePullRequestStats = (collection) => {
             timeFromRepeatedRequestToResponse: (0, calculations_1.calcAverageValue)(collection.timeFromRepeatedRequestToResponse),
             timeWaitingForRepeatedReview: (0, calculations_1.calcAverageValue)(collection.timeWaitingForRepeatedReview),
             assignmentTime: (0, calculations_1.calcAverageValue)(collection.assignmentTimes),
+            assignmentToReviewRequest: (0, calculations_1.calcAverageValue)(collection.assignmentToReviewRequestTimes),
+            reviewRequestToChangeRequest: (0, calculations_1.calcAverageValue)(collection.reviewRequestToChangeRequestTimes),
             firstUpdateAfterChangeRequestTime: (0, calculations_1.calcAverageValue)(collection.firstUpdateAfterRequestTimes),
+            updateToApproval: (0, calculations_1.calcAverageValue)(collection.updateToApprovalTimes),
+            approvalToMerge: (0, calculations_1.calcAverageValue)(collection.approvalToMergeTimes),
         },
     };
 };
@@ -1645,6 +1657,22 @@ const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], re
         startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
     }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
     const assignmentTime = (0, calcDifferenceInMinutes_1.calcDifferenceInMinutes)(pullRequestInfo?.created_at, assignmentTimestamp, {
+        endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
+        startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
+    }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
+    const assignmentToReviewRequest = (0, calcDifferenceInMinutes_1.calcDifferenceInMinutes)(assignmentTimestamp, reviewRequestTimestamp, {
+        endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
+        startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
+    }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
+    const reviewRequestToChangeRequest = (0, calcDifferenceInMinutes_1.calcDifferenceInMinutes)(reviewRequestTimestamp, firstChangeRequestTime, {
+        endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
+        startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
+    }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
+    const updateToApproval = (0, calcDifferenceInMinutes_1.calcDifferenceInMinutes)(firstUpdateAfterChangeRequest, approveTime, {
+        endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
+        startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
+    }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
+    const approvalToMerge = (0, calcDifferenceInMinutes_1.calcDifferenceInMinutes)(approveTime, pullRequestInfo?.merged_at, {
         endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
         startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
     }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
@@ -1739,6 +1767,14 @@ const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], re
                 firstUpdateAfterChangeRequestTime: typeof firstUpdateAfterChangeRequestTime === "number"
                     ? firstUpdateAfterChangeRequestTime
                     : 0,
+                assignmentToReviewRequest: typeof assignmentToReviewRequest === "number"
+                    ? assignmentToReviewRequest
+                    : 0,
+                reviewRequestToChangeRequest: typeof reviewRequestToChangeRequest === "number"
+                    ? reviewRequestToChangeRequest
+                    : 0,
+                updateToApproval: typeof updateToApproval === "number" ? updateToApproval : 0,
+                approvalToMerge: typeof approvalToMerge === "number" ? approvalToMerge : 0,
             },
         ],
         reviewCycleCounts: typeof cycleCount === "number"
@@ -1771,6 +1807,24 @@ const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], re
         mergeTimestamps: pullRequestInfo?.merged_at
             ? [...(collection?.mergeTimestamps || []), pullRequestInfo?.merged_at]
             : collection?.mergeTimestamps,
+        assignmentToReviewRequestTimes: typeof assignmentToReviewRequest === "number"
+            ? [
+                ...(collection?.assignmentToReviewRequestTimes || []),
+                assignmentToReviewRequest,
+            ]
+            : collection?.assignmentToReviewRequestTimes,
+        reviewRequestToChangeRequestTimes: typeof reviewRequestToChangeRequest === "number"
+            ? [
+                ...(collection?.reviewRequestToChangeRequestTimes || []),
+                reviewRequestToChangeRequest,
+            ]
+            : collection?.reviewRequestToChangeRequestTimes,
+        updateToApprovalTimes: typeof updateToApproval === "number"
+            ? [...(collection?.updateToApprovalTimes || []), updateToApproval]
+            : collection?.updateToApprovalTimes,
+        approvalToMergeTimes: typeof approvalToMerge === "number"
+            ? [...(collection?.approvalToMergeTimes || []), approvalToMerge]
+            : collection?.approvalToMergeTimes,
     };
 };
 exports.preparePullRequestTimeline = preparePullRequestTimeline;
@@ -2992,7 +3046,7 @@ Object.defineProperty(exports, "createList", ({ enumerable: true, get: function 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.firstUpdateAfterChangeRequestHeader = exports.assignmentTimeHeader = exports.pendingReviewsHeader = exports.reviewCyclesHeader = exports.commentsPerLineHeader = exports.staleAbandonedHeader = exports.commitsFilesChangedHeader = exports.timeFromRepeatedRequestToResponseHeader = exports.timeFromOpenToResponseHeader = exports.timeFromRequestToResponseHeader = exports.prSizesHeader = exports.requestChangesReceived = exports.reviewTypesHeader = exports.commentsReceivedHeader = exports.commentsConductedHeader = exports.discussionsConductedHeader = exports.discussionsHeader = exports.reviewRequestConductedHeader = exports.reviewConductedHeader = exports.unapprovedPrsHeader = exports.unreviewedPrsHeader = exports.additionsDeletionsHeader = exports.totalRevertedPrsHeader = exports.totalOpenedPrsHeader = exports.totalMergedPrsHeader = exports.timeToMergeHeader = exports.timeAwaitingRepeatedReviewHeader = exports.timeToApproveHeader = exports.timeToReviewHeader = exports.timeInDraftHeader = exports.timeToReviewRequestHeader = void 0;
+exports.approvalToMergeHeader = exports.updateToApprovalHeader = exports.reviewRequestToChangeHeader = exports.assignmentToReviewRequestHeader = exports.firstUpdateAfterChangeRequestHeader = exports.assignmentTimeHeader = exports.pendingReviewsHeader = exports.reviewCyclesHeader = exports.commentsPerLineHeader = exports.staleAbandonedHeader = exports.commitsFilesChangedHeader = exports.timeFromRepeatedRequestToResponseHeader = exports.timeFromOpenToResponseHeader = exports.timeFromRequestToResponseHeader = exports.prSizesHeader = exports.requestChangesReceived = exports.reviewTypesHeader = exports.commentsReceivedHeader = exports.commentsConductedHeader = exports.discussionsConductedHeader = exports.discussionsHeader = exports.reviewRequestConductedHeader = exports.reviewConductedHeader = exports.unapprovedPrsHeader = exports.unreviewedPrsHeader = exports.additionsDeletionsHeader = exports.totalRevertedPrsHeader = exports.totalOpenedPrsHeader = exports.totalMergedPrsHeader = exports.timeToMergeHeader = exports.timeAwaitingRepeatedReviewHeader = exports.timeToApproveHeader = exports.timeToReviewHeader = exports.timeInDraftHeader = exports.timeToReviewRequestHeader = void 0;
 exports.timeToReviewRequestHeader = "Time to review request";
 exports.timeInDraftHeader = "Time in draft";
 exports.timeToReviewHeader = "Time to review";
@@ -3024,6 +3078,10 @@ exports.reviewCyclesHeader = "Review cycles";
 exports.pendingReviewsHeader = "Pending review requests";
 exports.assignmentTimeHeader = "Time to assignment";
 exports.firstUpdateAfterChangeRequestHeader = "Time to first update after change request";
+exports.assignmentToReviewRequestHeader = "Assignment → Review request";
+exports.reviewRequestToChangeHeader = "Review request → Changes requested";
+exports.updateToApprovalHeader = "Update → Approval";
+exports.approvalToMergeHeader = "Approval → Merge";
 
 
 /***/ }),
@@ -3925,10 +3983,14 @@ const createTimelineTable = (data, type, users, date) => {
             `**${user}**`,
             (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.timeInDraft || 0),
             (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.assignmentTime || 0),
+            (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.assignmentToReviewRequest || 0),
             (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.timeToReviewRequest || 0),
             (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.timeToReview || 0),
             (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.timeWaitingForRepeatedReview || 0),
             (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.firstUpdateAfterChangeRequestTime || 0),
+            (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.reviewRequestToChangeRequest || 0),
+            (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.updateToApproval || 0),
+            (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.approvalToMerge || 0),
             (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.timeToApprove || 0),
             (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.timeToMerge || 0),
             data[user]?.[date]?.merged?.toString() || "0",
@@ -3936,16 +3998,20 @@ const createTimelineTable = (data, type, users, date) => {
     });
     const pullRequestTimeLine = (0, common_1.createTable)({
         title: `Pull requests timeline(${type === "percentile" ? parseInt((0, utils_1.getValueAsIs)("PERCENTILE")) : ""}${type === "percentile" ? "th " : ""}${type}) ${date}`,
-        description: "**Time to assignment** - time from PR creation to the first assignment event. \n**Time to review** - time from PR creation to first review. \n**Time to approve** - time from PR creation to first approval without requested changes. \n**Time to merge** - time from PR creation to merge. \n**Time to first update after change request** - time between the first changes requested review and the first subsequent commit.",
+        description: "**Time to assignment** - time from PR creation to the first assignment event. \n**Assignment → Review request** - time between first assignment and first review request. \n**Review request → Changes requested** - time from the first review request until the first changes-requested review. \n**Time to first update after change request** - time between the first changes requested review and the first subsequent commit. \n**Update → Approval** - time from that follow-up commit until approval. \n**Approval → Merge** - time between approval and merge. Remaining columns show the traditional creation → review/approval/merge durations.",
         table: {
             headers: [
                 "user",
                 constants_1.timeInDraftHeader,
                 constants_1.assignmentTimeHeader,
+                constants_1.assignmentToReviewRequestHeader,
                 constants_1.timeToReviewRequestHeader,
                 constants_1.timeToReviewHeader,
                 constants_1.timeAwaitingRepeatedReviewHeader,
                 constants_1.firstUpdateAfterChangeRequestHeader,
+                constants_1.reviewRequestToChangeHeader,
+                constants_1.updateToApprovalHeader,
+                constants_1.approvalToMergeHeader,
                 constants_1.timeToApproveHeader,
                 constants_1.timeToMergeHeader,
                 constants_1.totalMergedPrsHeader,
