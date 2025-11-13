@@ -13,8 +13,12 @@ jobs:
         name: 'Create report'
         runs-on: ubuntu-latest
         steps:
-            - name: 'Run script for analytics'
-              uses: kevit-ashish-chandpa/test-analytics-for-pr@v1
+            - name: 'Checkout repository'
+              uses: actions/checkout@v4
+
+            - id: analytics
+              name: 'Run script for analytics'
+              uses: kevit-ashish-chandpa/test-analytics-for-pr@v3
               with:
                   GITHUB_TOKEN: ${{ secrets.PERSONAL_TOKEN }} # In the case of a personal access token, it needs to be added to the repository's secrets and used in this field.
                   GITHUB_REPO_FOR_ISSUE: pr-analytics # Make sure to specify the name of the repository where the issue will be created
@@ -32,4 +36,21 @@ jobs:
                   HIDE_USERS: 'youtube-scrapping-team,Employee-Offboarding,developers-jump-start,dependabot[bot],Bar Buddy devs,Backend Team Bot Activity Analytics,OpenAI-Demo,Node Interns 2024,Trainee-Backend,The Warriors,Betbricks,Kevit-AI-Team,Madeira-Devs,R3Stemsell-Openai,Sys-Config-Check-Team,Canada Streamhub Backend Team,Canada Streamhub Frontend Team,Cedar Shores Backend Team,Cedar Shores Frontend Team,The Hannacup Backend Team,Elevonix developers,orient-museum-BE,Quick Projects,RS recuitment Team,Trainee-Backend-2023,Winrest-AI-Bot Team,winrest-developer-team-write,WBCA Member Backend Team,Zavo Platform Middleware,M2PG-Payment-Gateway Team Leads,M2PG-Payment-Gateway Backend Team,M2PG-Payment-Gateway Frontend Team'
                   STALE_PR_DAYS_THRESHOLD: '14' # Optional: tweak if you want a shorter/longer stale window
                   REVIEWER_MAX_PENDING_THRESHOLD: '5' # Optional: change to the warning limit that makes sense for your team
-                  EXECUTION_OUTCOME: 'collection'
+                  EXECUTION_OUTCOME: 'new-issue , collection'
+            - name: 'Store JSON collection'
+              if: always()
+              run: |
+                  mkdir -p reports
+                  echo '${{ steps.analytics.outputs.JSON_COLLECTION }}' > reports/collection.json
+            - name: 'Convert collection to CSV'
+              if: always()
+              run: |
+                  node scripts/collection-to-csv.js reports/collection.json reports/collection.csv
+            - name: 'Upload JSON artifact'
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: pr-analytics-collection
+                  path: |
+                      reports/collection.json
+                      reports/collection.csv
