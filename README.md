@@ -42,6 +42,8 @@ Displays the time from PR creation to each displayed status. Helps identify bott
 | **dev3**  |  13 minutes   |       13 minutes       | 4 hours 12 minutes |       2 hours 21 minutes        | 4 hours 48 minutes | 22 hours 8 minutes  |        54        |
 | **total** |  10 minutes   |       10 minutes       | 4 hours 15 minutes |       4 hours 43 minutes        | 7 hours 21 minutes | 22 hours 36 minutes |       232        |
 
+Immediately below this table the report shows a **Stage Duration Breakdown** detailing the average time spent in each step of the lifecycle (creation → assignment, assignment → review request, review request → changes requested, changes requested → update, update → approval, approval → merge). Use it to spot exactly where hand-offs slow down even when overall lead time looks healthy.
+
 ### Contribution
 
 Shows the total volume of code merged, reviews conducted, and comments in PRs. Helps to understand the context in which other metrics apply. Use the `workload` value in the `SHOW_STATS_TYPES` parameter.

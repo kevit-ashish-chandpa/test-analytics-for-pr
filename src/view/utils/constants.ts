@@ -32,12 +32,14 @@ export const staleAbandonedHeader = "Stale / Abandoned PRs";
 export const commentsPerLineHeader = "Comments per line changed";
 export const reviewCyclesHeader = "Review cycles";
 export const pendingReviewsHeader = "Pending review requests";
-export const assignmentTimeHeader = "Time to assignment";
+export const assignmentTimeHeader = "Creation → Assignment";
 export const firstUpdateAfterChangeRequestHeader =
   "Time to first update after change request";
 export const assignmentToReviewRequestHeader =
   "Assignment → Review request";
 export const reviewRequestToChangeHeader =
   "Review request → Changes requested";
+export const changeRequestToUpdateHeader =
+  "Changes requested → Update";
 export const updateToApprovalHeader = "Update → Approval";
 export const approvalToMergeHeader = "Approval → Merge";

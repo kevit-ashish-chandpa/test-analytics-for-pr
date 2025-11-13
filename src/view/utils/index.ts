@@ -9,6 +9,7 @@ export { formatMinutesDuration } from "./formatMinutesDuration";
 export { sortCollectionsByDate } from "./sortCollectionsByDate";
 export { createTimelineGanttBar } from "./createTimelineGanttBar";
 export { createTimelineTable } from "./createTimelineTable";
+export { createStageDurationTable } from "./createStageDurationTable";
 export { createPullRequestQualityTable } from "./createPullRequestQualityTable";
 export { getDisplayUserList } from "./common";
 export { createTimelineContent } from "./createTimelineContent";

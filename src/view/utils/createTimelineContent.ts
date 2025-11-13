@@ -3,6 +3,7 @@ import { Collection } from "../../converters/types";
 import { createList } from "./common";
 import { createTimelineGanttBar } from "./createTimelineGanttBar";
 import { createTimelineTable } from "./createTimelineTable";
+import { createStageDurationTable } from "./createStageDurationTable";
 import { StatsType } from "./types";
 import { formatMinutesDuration } from "./formatMinutesDuration";
 import { createTimelinePieChart } from "./createTimelinePieChart";
@@ -54,6 +55,12 @@ export const createTimelineContent = (
         users,
         date
       );
+      const stageDurationTable = createStageDurationTable(
+        data,
+        type as StatsType,
+        users,
+        date
+      );
 
       return `
 ${
@@ -61,6 +68,7 @@ ${
     ? pullRequestTimelineBar
     : pullRequestTimelineTable
 }
+${stageDurationTable}
 `;
     })
     .join("\n");
