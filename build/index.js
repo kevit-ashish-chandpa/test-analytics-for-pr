@@ -3046,7 +3046,7 @@ Object.defineProperty(exports, "createList", ({ enumerable: true, get: function 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.approvalToMergeHeader = exports.updateToApprovalHeader = exports.reviewRequestToChangeHeader = exports.assignmentToReviewRequestHeader = exports.firstUpdateAfterChangeRequestHeader = exports.assignmentTimeHeader = exports.pendingReviewsHeader = exports.reviewCyclesHeader = exports.commentsPerLineHeader = exports.staleAbandonedHeader = exports.commitsFilesChangedHeader = exports.timeFromRepeatedRequestToResponseHeader = exports.timeFromOpenToResponseHeader = exports.timeFromRequestToResponseHeader = exports.prSizesHeader = exports.requestChangesReceived = exports.reviewTypesHeader = exports.commentsReceivedHeader = exports.commentsConductedHeader = exports.discussionsConductedHeader = exports.discussionsHeader = exports.reviewRequestConductedHeader = exports.reviewConductedHeader = exports.unapprovedPrsHeader = exports.unreviewedPrsHeader = exports.additionsDeletionsHeader = exports.totalRevertedPrsHeader = exports.totalOpenedPrsHeader = exports.totalMergedPrsHeader = exports.timeToMergeHeader = exports.timeAwaitingRepeatedReviewHeader = exports.timeToApproveHeader = exports.timeToReviewHeader = exports.timeInDraftHeader = exports.timeToReviewRequestHeader = void 0;
+exports.approvalToMergeHeader = exports.updateToApprovalHeader = exports.changeRequestToUpdateHeader = exports.reviewRequestToChangeHeader = exports.assignmentToReviewRequestHeader = exports.firstUpdateAfterChangeRequestHeader = exports.assignmentTimeHeader = exports.pendingReviewsHeader = exports.reviewCyclesHeader = exports.commentsPerLineHeader = exports.staleAbandonedHeader = exports.commitsFilesChangedHeader = exports.timeFromRepeatedRequestToResponseHeader = exports.timeFromOpenToResponseHeader = exports.timeFromRequestToResponseHeader = exports.prSizesHeader = exports.requestChangesReceived = exports.reviewTypesHeader = exports.commentsReceivedHeader = exports.commentsConductedHeader = exports.discussionsConductedHeader = exports.discussionsHeader = exports.reviewRequestConductedHeader = exports.reviewConductedHeader = exports.unapprovedPrsHeader = exports.unreviewedPrsHeader = exports.additionsDeletionsHeader = exports.totalRevertedPrsHeader = exports.totalOpenedPrsHeader = exports.totalMergedPrsHeader = exports.timeToMergeHeader = exports.timeAwaitingRepeatedReviewHeader = exports.timeToApproveHeader = exports.timeToReviewHeader = exports.timeInDraftHeader = exports.timeToReviewRequestHeader = void 0;
 exports.timeToReviewRequestHeader = "Time to review request";
 exports.timeInDraftHeader = "Time in draft";
 exports.timeToReviewHeader = "Time to review";
@@ -3076,10 +3076,11 @@ exports.staleAbandonedHeader = "Stale / Abandoned PRs";
 exports.commentsPerLineHeader = "Comments per line changed";
 exports.reviewCyclesHeader = "Review cycles";
 exports.pendingReviewsHeader = "Pending review requests";
-exports.assignmentTimeHeader = "Time to assignment";
+exports.assignmentTimeHeader = "Creation → Assignment";
 exports.firstUpdateAfterChangeRequestHeader = "Time to first update after change request";
 exports.assignmentToReviewRequestHeader = "Assignment → Review request";
 exports.reviewRequestToChangeHeader = "Review request → Changes requested";
+exports.changeRequestToUpdateHeader = "Changes requested → Update";
 exports.updateToApprovalHeader = "Update → Approval";
 exports.approvalToMergeHeader = "Approval → Merge";
 
@@ -3624,6 +3625,68 @@ exports.createSizeDependencyXYChart = createSizeDependencyXYChart;
 
 /***/ }),
 
+/***/ 39896:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.createStageDurationTable = void 0;
+const constants_1 = __nccwpck_require__(11474);
+const common_1 = __nccwpck_require__(64682);
+const formatMinutesDuration_1 = __nccwpck_require__(92411);
+const createStageDurationTable = (data, type, users, date) => {
+    let hasData = false;
+    const tableRows = users
+        .filter((user) => data[user]?.[date]?.merged)
+        .map((user) => {
+        const assignment = data[user]?.[date]?.[type]?.assignmentTime || 0;
+        const assignmentToReview = data[user]?.[date]?.[type]?.assignmentToReviewRequest || 0;
+        const reviewToChange = data[user]?.[date]?.[type]?.reviewRequestToChangeRequest || 0;
+        const changeToUpdate = data[user]?.[date]?.[type]?.firstUpdateAfterChangeRequestTime || 0;
+        const updateToApprovalValue = data[user]?.[date]?.[type]?.updateToApproval || 0;
+        const approvalToMergeValue = data[user]?.[date]?.[type]?.approvalToMerge || 0;
+        const stageValues = [
+            assignment,
+            assignmentToReview,
+            reviewToChange,
+            changeToUpdate,
+            updateToApprovalValue,
+            approvalToMergeValue,
+        ];
+        if (stageValues.some((value) => value)) {
+            hasData = true;
+        }
+        return [
+            `**${user}**`,
+            ...stageValues.map((value) => (0, formatMinutesDuration_1.formatMinutesDuration)(value || 0)),
+        ];
+    });
+    if (!hasData) {
+        return "";
+    }
+    return (0, common_1.createTable)({
+        title: `Stage duration breakdown(${type}) ${date}`,
+        description: "**Creation → Assignment** through **Approval → Merge** show the average time spent in each stage. These values complement the overall creation → milestone durations shown in the main timeline table.",
+        table: {
+            headers: [
+                "user",
+                constants_1.assignmentTimeHeader,
+                constants_1.assignmentToReviewRequestHeader,
+                constants_1.reviewRequestToChangeHeader,
+                constants_1.changeRequestToUpdateHeader,
+                constants_1.updateToApprovalHeader,
+                constants_1.approvalToMergeHeader,
+            ],
+            rows: tableRows,
+        },
+    });
+};
+exports.createStageDurationTable = createStageDurationTable;
+
+
+/***/ }),
+
 /***/ 50940:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -3635,6 +3698,7 @@ const utils_1 = __nccwpck_require__(41002);
 const common_1 = __nccwpck_require__(64682);
 const createTimelineGanttBar_1 = __nccwpck_require__(5304);
 const createTimelineTable_1 = __nccwpck_require__(20194);
+const createStageDurationTable_1 = __nccwpck_require__(39896);
 const formatMinutesDuration_1 = __nccwpck_require__(92411);
 const createTimelinePieChart_1 = __nccwpck_require__(254);
 const createTimelineContent = (data, users, date) => {
@@ -3662,10 +3726,12 @@ const createTimelineContent = (data, users, date) => {
         .map((type) => {
         const pullRequestTimelineTable = (0, createTimelineTable_1.createTimelineTable)(data, type, users, date);
         const pullRequestTimelineBar = (0, createTimelineGanttBar_1.createTimelineGanttBar)(data, type, users, date);
+        const stageDurationTable = (0, createStageDurationTable_1.createStageDurationTable)(data, type, users, date);
         return `
 ${(0, utils_1.getValueAsIs)("USE_CHARTS") === "true"
             ? pullRequestTimelineBar
             : pullRequestTimelineTable}
+${stageDurationTable}
 `;
     })
         .join("\n");
@@ -3982,15 +4048,9 @@ const createTimelineTable = (data, type, users, date) => {
         return [
             `**${user}**`,
             (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.timeInDraft || 0),
-            (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.assignmentTime || 0),
-            (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.assignmentToReviewRequest || 0),
             (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.timeToReviewRequest || 0),
             (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.timeToReview || 0),
             (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.timeWaitingForRepeatedReview || 0),
-            (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.firstUpdateAfterChangeRequestTime || 0),
-            (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.reviewRequestToChangeRequest || 0),
-            (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.updateToApproval || 0),
-            (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.approvalToMerge || 0),
             (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.timeToApprove || 0),
             (0, formatMinutesDuration_1.formatMinutesDuration)(data[user]?.[date]?.[type]?.timeToMerge || 0),
             data[user]?.[date]?.merged?.toString() || "0",
@@ -3998,20 +4058,14 @@ const createTimelineTable = (data, type, users, date) => {
     });
     const pullRequestTimeLine = (0, common_1.createTable)({
         title: `Pull requests timeline(${type === "percentile" ? parseInt((0, utils_1.getValueAsIs)("PERCENTILE")) : ""}${type === "percentile" ? "th " : ""}${type}) ${date}`,
-        description: "**Time to assignment** - time from PR creation to the first assignment event. \n**Assignment → Review request** - time between first assignment and first review request. \n**Review request → Changes requested** - time from the first review request until the first changes-requested review. \n**Time to first update after change request** - time between the first changes requested review and the first subsequent commit. \n**Update → Approval** - time from that follow-up commit until approval. \n**Approval → Merge** - time between approval and merge. Remaining columns show the traditional creation → review/approval/merge durations.",
+        description: "**Time to review** columns measure creation → milestone durations. Use the Stage Duration table below to inspect assignment/re-review loops.",
         table: {
             headers: [
                 "user",
                 constants_1.timeInDraftHeader,
-                constants_1.assignmentTimeHeader,
-                constants_1.assignmentToReviewRequestHeader,
                 constants_1.timeToReviewRequestHeader,
                 constants_1.timeToReviewHeader,
                 constants_1.timeAwaitingRepeatedReviewHeader,
-                constants_1.firstUpdateAfterChangeRequestHeader,
-                constants_1.reviewRequestToChangeHeader,
-                constants_1.updateToApprovalHeader,
-                constants_1.approvalToMergeHeader,
                 constants_1.timeToApproveHeader,
                 constants_1.timeToMergeHeader,
                 constants_1.totalMergedPrsHeader,
@@ -4129,7 +4183,7 @@ exports.formatMinutesDuration = formatMinutesDuration;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.createResponseTable = exports.createReferences = exports.createTimelineContent = exports.getDisplayUserList = exports.createPullRequestQualityTable = exports.createTimelineTable = exports.createTimelineGanttBar = exports.sortCollectionsByDate = exports.formatMinutesDuration = exports.createPieChart = exports.createGanttBar = exports.createTable = exports.createReviewTable = exports.createTotalTable = exports.createConfigParamsCode = exports.createDiscussionsPieChart = exports.createTimelineMonthComparisonChart = exports.createDependencyMarkdown = void 0;
+exports.createResponseTable = exports.createReferences = exports.createTimelineContent = exports.getDisplayUserList = exports.createPullRequestQualityTable = exports.createStageDurationTable = exports.createTimelineTable = exports.createTimelineGanttBar = exports.sortCollectionsByDate = exports.formatMinutesDuration = exports.createPieChart = exports.createGanttBar = exports.createTable = exports.createReviewTable = exports.createTotalTable = exports.createConfigParamsCode = exports.createDiscussionsPieChart = exports.createTimelineMonthComparisonChart = exports.createDependencyMarkdown = void 0;
 var createDependencyMarkdown_1 = __nccwpck_require__(20702);
 Object.defineProperty(exports, "createDependencyMarkdown", ({ enumerable: true, get: function () { return createDependencyMarkdown_1.createDependencyMarkdown; } }));
 var createTimelineMonthComparisonChart_1 = __nccwpck_require__(82264);
@@ -4154,6 +4208,8 @@ var createTimelineGanttBar_1 = __nccwpck_require__(5304);
 Object.defineProperty(exports, "createTimelineGanttBar", ({ enumerable: true, get: function () { return createTimelineGanttBar_1.createTimelineGanttBar; } }));
 var createTimelineTable_1 = __nccwpck_require__(20194);
 Object.defineProperty(exports, "createTimelineTable", ({ enumerable: true, get: function () { return createTimelineTable_1.createTimelineTable; } }));
+var createStageDurationTable_1 = __nccwpck_require__(39896);
+Object.defineProperty(exports, "createStageDurationTable", ({ enumerable: true, get: function () { return createStageDurationTable_1.createStageDurationTable; } }));
 var createPullRequestQualityTable_1 = __nccwpck_require__(64721);
 Object.defineProperty(exports, "createPullRequestQualityTable", ({ enumerable: true, get: function () { return createPullRequestQualityTable_1.createPullRequestQualityTable; } }));
 var common_2 = __nccwpck_require__(64682);
