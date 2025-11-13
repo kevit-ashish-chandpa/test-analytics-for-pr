@@ -14,6 +14,8 @@ type TimelinePoints = {
   timeFromOpenToResponse?: number;
   timeFromRepeatedRequestToResponse?: number;
   timeWaitingForRepeatedReview?: number;
+  assignmentTime?: number;
+  firstUpdateAfterChangeRequestTime?: number;
 };
 
 type DiscussionResult = {
@@ -42,6 +44,20 @@ type PullRequestTimelineInfo = {
   additions: number;
   deletions: number;
   author: string;
+  commitCount?: number;
+  filesChanged?: number;
+  commentsPerLineChangeRatio?: number;
+  reviewCycleCount?: number;
+  stalePrFlag?: boolean;
+  abandonedPrFlag?: boolean;
+  revertedPrFlag?: boolean;
+  assignmentTimestamp?: string | null;
+  reviewRequestTimestamp?: string | null;
+  firstUpdateAfterChangeRequestTimestamp?: string | null;
+  approvalTimestamp?: string | null;
+  mergeTimestamp?: string | null;
+  assignmentTime?: number;
+  firstUpdateAfterChangeRequestTime?: number;
 };
 
 type Discussion = {
@@ -121,4 +137,20 @@ export type Collection = {
   >;
   reviewsConductedSize?: PullRequestSize[];
   pullRequestsInfo?: PullRequestTimelineInfo[];
+  commitCounts?: number[];
+  changedFilesCounts?: number[];
+  linesAddedList?: number[];
+  linesRemovedList?: number[];
+  commentsPerLineChangeRatio?: number[];
+  reviewCycleCounts?: number[];
+  stalePullRequests?: number;
+  abandonedPullRequests?: number;
+  reviewsPending?: number;
+  assignmentTimes?: number[];
+  firstUpdateAfterRequestTimes?: number[];
+  assignmentTimestamps?: string[];
+  reviewRequestTimestamps?: string[];
+  firstUpdateAfterRequestTimestamps?: string[];
+  approvalTimestamps?: string[];
+  mergeTimestamps?: string[];
 };

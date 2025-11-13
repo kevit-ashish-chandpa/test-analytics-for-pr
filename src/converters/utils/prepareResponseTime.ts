@@ -62,11 +62,11 @@ export const prepareResponseTime = (
   });
 
   Object.entries(responses as Record<string, any[][]>).forEach(
-    ([user, responses]) => {
+    ([user, userResponses]) => {
       ["total", dateKey].forEach((key) => {
         const timeFromInitialRequestToResponse = calcDifferenceInMinutes(
-          responses[0]?.[0],
-          responses[0]?.[1],
+          userResponses[0]?.[0],
+          userResponses[0]?.[1],
           {
             endOfWorkingTime: getValueAsIs("CORE_HOURS_END"),
             startOfWorkingTime: getValueAsIs("CORE_HOURS_START"),
@@ -76,7 +76,7 @@ export const prepareResponseTime = (
 
         const timeFromOpenToResponse = calcDifferenceInMinutes(
           pullRequest?.created_at,
-          responses[0]?.[1],
+          userResponses[0]?.[1],
           {
             endOfWorkingTime: getValueAsIs("CORE_HOURS_END"),
             startOfWorkingTime: getValueAsIs("CORE_HOURS_START"),
@@ -84,7 +84,7 @@ export const prepareResponseTime = (
           getMultipleValuesInput("HOLIDAYS")
         );
 
-        const timeFromRepeatedRequestToResponse = responses
+        const timeFromRepeatedRequestToResponse = userResponses
           .filter((el, index) => index > 0)
           .map((element) =>
             calcDifferenceInMinutes(
@@ -146,6 +146,25 @@ export const prepareResponseTime = (
           }
         });
       });
+      const pendingReviewCount = userResponses.filter(
+        (response) =>
+          Array.isArray(response) &&
+          (response.length < 2 || typeof response[1] === "undefined")
+      ).length;
+      if (pendingReviewCount > 0) {
+        ["total", dateKey].forEach((key) => {
+          ["total", user, ...(teams[user] || [])].forEach((userKey) => {
+            if (checkUserInclusive(userKey)) {
+              set(
+                collection,
+                [userKey, key, "reviewsPending"],
+                get(collection, [userKey, key, "reviewsPending"], 0) +
+                  pendingReviewCount
+              );
+            }
+          });
+        });
+      }
     }
   );
 };

@@ -87,7 +87,8 @@ export const collectData = (
             reviews,
             reviewRequests?.[0],
             statuses,
-            get(collection, [key, innerKey], {})
+            get(collection, [key, innerKey], {}),
+            data.events[index] || []
           )
         );
       });

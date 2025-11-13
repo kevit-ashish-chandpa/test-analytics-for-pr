@@ -1,5 +1,7 @@
 import { Collection } from "../../converters/types";
 import {
+  assignmentTimeHeader,
+  firstUpdateAfterChangeRequestHeader,
   timeAwaitingRepeatedReviewHeader,
   timeInDraftHeader,
   timeToApproveHeader,
@@ -26,11 +28,17 @@ export const createTimelineTable = (
         `**${user}**`,
         formatMinutesDuration(data[user]?.[date]?.[type]?.timeInDraft || 0),
         formatMinutesDuration(
+          data[user]?.[date]?.[type]?.assignmentTime || 0
+        ),
+        formatMinutesDuration(
           data[user]?.[date]?.[type]?.timeToReviewRequest || 0
         ),
         formatMinutesDuration(data[user]?.[date]?.[type]?.timeToReview || 0),
         formatMinutesDuration(
           data[user]?.[date]?.[type]?.timeWaitingForRepeatedReview || 0
+        ),
+        formatMinutesDuration(
+          data[user]?.[date]?.[type]?.firstUpdateAfterChangeRequestTime || 0
         ),
         formatMinutesDuration(data[user]?.[date]?.[type]?.timeToApprove || 0),
         formatMinutesDuration(data[user]?.[date]?.[type]?.timeToMerge || 0),
@@ -43,14 +51,16 @@ export const createTimelineTable = (
       type === "percentile" ? parseInt(getValueAsIs("PERCENTILE")) : ""
     }${type === "percentile" ? "th " : ""}${type}) ${date}`,
     description:
-      "**Time to review** - time from PR creation to first review. \n**Time to approve** - time from PR creation to first approval without requested changes. \n**Time to merge** - time from PR creation to merge.",
+      "**Time to assignment** - time from PR creation to the first assignment event. \n**Time to review** - time from PR creation to first review. \n**Time to approve** - time from PR creation to first approval without requested changes. \n**Time to merge** - time from PR creation to merge. \n**Time to first update after change request** - time between the first changes requested review and the first subsequent commit.",
     table: {
       headers: [
         "user",
         timeInDraftHeader,
+        assignmentTimeHeader,
         timeToReviewRequestHeader,
         timeToReviewHeader,
         timeAwaitingRepeatedReviewHeader,
+        firstUpdateAfterChangeRequestHeader,
         timeToApproveHeader,
         timeToMergeHeader,
         totalMergedPrsHeader,

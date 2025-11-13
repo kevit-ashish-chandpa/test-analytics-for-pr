@@ -1,5 +1,7 @@
 import { Collection } from "../../converters/types";
 import {
+  assignmentTimeHeader,
+  firstUpdateAfterChangeRequestHeader,
   reviewConductedHeader,
   reviewRequestConductedHeader,
   timeFromOpenToResponseHeader,
@@ -48,6 +50,13 @@ export const createResponseTable = (
               data[user]?.[date]?.[type as StatsType]
                 ?.timeFromRepeatedRequestToResponse || 0
             ),
+            formatMinutesDuration(
+              data[user]?.[date]?.[type as StatsType]?.assignmentTime || 0
+            ),
+            formatMinutesDuration(
+              data[user]?.[date]?.[type as StatsType]
+                ?.firstUpdateAfterChangeRequestTime || 0
+            ),
           ];
         });
       return createTable({
@@ -55,7 +64,7 @@ export const createResponseTable = (
           type === "percentile" ? parseInt(getValueAsIs("PERCENTILE")) : ""
         }${type === "percentile" ? "th " : ""}${type}) ${date}`,
         description:
-          "**Time from re-request to response** - time from a review re-request to the response. Multiple re-requests and responses can occur in a single pull request",
+          "**Time from re-request to response** - time from a review re-request to the response. Multiple re-requests and responses can occur in a single pull request.\n**Time to assignment** - time from PR creation to the first assignment event.\n**Time to first update after change request** - how long it took the author to push a new commit after the first changes requested review.",
         table: {
           headers: [
             "user",
@@ -64,6 +73,8 @@ export const createResponseTable = (
             timeFromOpenToResponseHeader,
             timeFromRequestToResponseHeader,
             timeFromRepeatedRequestToResponseHeader,
+            assignmentTimeHeader,
+            firstUpdateAfterChangeRequestHeader,
           ].filter((header, index) => tableRows.some((row) => row[index])),
           rows: tableRows.map((row) =>
             row.filter((cell, index) => tableRows.some((row) => row[index]))

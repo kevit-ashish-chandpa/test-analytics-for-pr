@@ -132,6 +132,14 @@ inputs:
     description: "Shows activity time graphs"
     required: false
     default: false
+  STALE_PR_DAYS_THRESHOLD:
+    description: "Number of days after which an open pull request is considered stale"
+    required: false
+    default: "14"
+  REVIEWER_MAX_PENDING_THRESHOLD:
+    description: "Optional soft threshold used to highlight reviewers with many pending review requests"
+    required: false
+    default: "5"
 
 outputs:
   JSON_COLLECTION:

@@ -27,3 +27,11 @@ export const timeFromRequestToResponseHeader =
 export const timeFromOpenToResponseHeader = "Time from opening to response";
 export const timeFromRepeatedRequestToResponseHeader =
   "Time from re-request to response";
+export const commitsFilesChangedHeader = "Avg commits / files changed";
+export const staleAbandonedHeader = "Stale / Abandoned PRs";
+export const commentsPerLineHeader = "Comments per line changed";
+export const reviewCyclesHeader = "Review cycles";
+export const pendingReviewsHeader = "Pending review requests";
+export const assignmentTimeHeader = "Time to assignment";
+export const firstUpdateAfterChangeRequestHeader =
+  "Time to first update after change request";

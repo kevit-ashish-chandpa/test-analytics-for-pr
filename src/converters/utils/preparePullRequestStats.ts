@@ -76,6 +76,10 @@ export const preparePullRequestStats = (collection: Collection) => {
       timeWaitingForRepeatedReview: calcMedianValue(
         collection.timeWaitingForRepeatedReview
       ),
+      assignmentTime: calcMedianValue(collection.assignmentTimes),
+      firstUpdateAfterChangeRequestTime: calcMedianValue(
+        collection.firstUpdateAfterRequestTimes
+      ),
     },
     percentile: {
       timeToReview: calcPercentileValue(collection.timeToReview),
@@ -95,6 +99,10 @@ export const preparePullRequestStats = (collection: Collection) => {
       timeWaitingForRepeatedReview: calcPercentileValue(
         collection.timeWaitingForRepeatedReview
       ),
+      assignmentTime: calcPercentileValue(collection.assignmentTimes),
+      firstUpdateAfterChangeRequestTime: calcPercentileValue(
+        collection.firstUpdateAfterRequestTimes
+      ),
     },
     average: {
       timeToReview: calcAverageValue(collection.timeToReview),
@@ -113,6 +121,10 @@ export const preparePullRequestStats = (collection: Collection) => {
       ),
       timeWaitingForRepeatedReview: calcAverageValue(
         collection.timeWaitingForRepeatedReview
+      ),
+      assignmentTime: calcAverageValue(collection.assignmentTimes),
+      firstUpdateAfterChangeRequestTime: calcAverageValue(
+        collection.firstUpdateAfterRequestTimes
       ),
     },
   };

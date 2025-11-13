@@ -4,12 +4,16 @@ import { invalidUserLogin } from "../constants";
 import { Collection } from "../types";
 import {
   calcDraftTime,
+  calcReviewCycles,
   checkUserInclusive,
   getApproveTime,
   getPullRequestSize,
+  isAbandonedPullRequest,
+  isStalePullRequest,
 } from "./calculations";
 import { calcDifferenceInMinutes } from "./calculations/calcDifferenceInMinutes";
 import { calcPRsize } from "./calculations/calcPRsize";
+import { checkRevert } from "./checkRevert";
 
 export const preparePullRequestTimeline = (
   pullRequestInfo: Awaited<
@@ -18,7 +22,8 @@ export const preparePullRequestTimeline = (
   pullRequestReviews: any[] = [],
   reviewRequest: any | undefined,
   statuses: any[] | undefined = [],
-  collection: Collection
+  collection: Collection,
+  timelineEvents: any[] = []
 ) => {
   if (!checkUserInclusive(pullRequestInfo?.user?.login || invalidUserLogin)) {
     return collection;
@@ -32,6 +37,11 @@ export const preparePullRequestTimeline = (
     pullRequestReviews,
     parseInt(getValueAsIs("REQUIRED_APPROVALS"))
   );
+  const reviewRequestTimestamp = reviewRequest?.created_at || null;
+  const assignmentEvent = timelineEvents.find(
+    (event) => event.event === "assigned"
+  );
+  const assignmentTimestamp = assignmentEvent?.created_at || null;
 
   const timeToReviewRequest = calcDifferenceInMinutes(
     pullRequestInfo?.created_at,
@@ -96,6 +106,42 @@ export const preparePullRequestTimeline = (
     pullRequestInfo?.additions,
     pullRequestInfo?.deletions
   );
+  const { cycleCount, firstChangeRequestTime, firstUpdateAfterChangeRequest } =
+    calcReviewCycles(pullRequestReviews, timelineEvents);
+  const firstUpdateAfterChangeRequestTime = calcDifferenceInMinutes(
+    firstChangeRequestTime,
+    firstUpdateAfterChangeRequest,
+    {
+      endOfWorkingTime: getValueAsIs("CORE_HOURS_END"),
+      startOfWorkingTime: getValueAsIs("CORE_HOURS_START"),
+    },
+    getMultipleValuesInput("HOLIDAYS")
+  );
+  const assignmentTime = calcDifferenceInMinutes(
+    pullRequestInfo?.created_at,
+    assignmentTimestamp,
+    {
+      endOfWorkingTime: getValueAsIs("CORE_HOURS_END"),
+      startOfWorkingTime: getValueAsIs("CORE_HOURS_START"),
+    },
+    getMultipleValuesInput("HOLIDAYS")
+  );
+  const staleThreshold = parseInt(getValueAsIs("STALE_PR_DAYS_THRESHOLD")) || 14;
+  const isStale = isStalePullRequest(pullRequestInfo, staleThreshold);
+  const isAbandoned = isAbandonedPullRequest(pullRequestInfo);
+  const reverted = checkRevert(
+    pullRequestInfo?.head?.ref,
+    pullRequestInfo?.labels
+  );
+  const reviewComments = pullRequestInfo?.review_comments || 0;
+  const issueComments = pullRequestInfo?.comments || 0;
+  const additions = pullRequestInfo?.additions || 0;
+  const deletions = pullRequestInfo?.deletions || 0;
+  const totalLinesChanged = additions + deletions;
+  const commentsRatio =
+    totalLinesChanged > 0
+      ? (reviewComments + issueComments) / totalLinesChanged
+      : reviewComments + issueComments || 0;
 
   return {
     ...collection,
@@ -168,7 +214,60 @@ export const preparePullRequestTimeline = (
         timeToReview: timeToReview || 0,
         timeToApprove: timeToApprove ? timeToApprove - (timeToReview || 0) : 0,
         timeToMerge: timeToMerge ? timeToMerge - (timeToApprove || 0) : 0,
+        commitCount: pullRequestInfo?.commits || 0,
+        filesChanged: pullRequestInfo?.changed_files || 0,
+        commentsPerLineChangeRatio: Number.isFinite(commentsRatio)
+          ? commentsRatio
+          : 0,
+        reviewCycleCount: cycleCount,
+        stalePrFlag: isStale,
+        abandonedPrFlag: isAbandoned,
+        revertedPrFlag: reverted,
+        assignmentTimestamp,
+        reviewRequestTimestamp,
+        firstUpdateAfterChangeRequestTimestamp:
+          firstUpdateAfterChangeRequest || null,
+        approvalTimestamp: approveTime,
+        mergeTimestamp: pullRequestInfo?.merged_at || null,
+        assignmentTime: typeof assignmentTime === "number" ? assignmentTime : 0,
+        firstUpdateAfterChangeRequestTime:
+          typeof firstUpdateAfterChangeRequestTime === "number"
+            ? firstUpdateAfterChangeRequestTime
+            : 0,
       },
     ],
+    reviewCycleCounts:
+      typeof cycleCount === "number"
+        ? [...(collection?.reviewCycleCounts || []), cycleCount]
+        : collection?.reviewCycleCounts,
+    firstUpdateAfterRequestTimes:
+      typeof firstUpdateAfterChangeRequestTime === "number"
+        ? [
+            ...(collection?.firstUpdateAfterRequestTimes || []),
+            firstUpdateAfterChangeRequestTime,
+          ]
+        : collection?.firstUpdateAfterRequestTimes,
+    assignmentTimes:
+      typeof assignmentTime === "number"
+        ? [...(collection?.assignmentTimes || []), assignmentTime]
+        : collection?.assignmentTimes,
+    assignmentTimestamps: assignmentTimestamp
+      ? [...(collection?.assignmentTimestamps || []), assignmentTimestamp]
+      : collection?.assignmentTimestamps,
+    reviewRequestTimestamps: reviewRequestTimestamp
+      ? [...(collection?.reviewRequestTimestamps || []), reviewRequestTimestamp]
+      : collection?.reviewRequestTimestamps,
+    firstUpdateAfterRequestTimestamps: firstUpdateAfterChangeRequest
+      ? [
+          ...(collection?.firstUpdateAfterRequestTimestamps || []),
+          firstUpdateAfterChangeRequest,
+        ]
+      : collection?.firstUpdateAfterRequestTimestamps,
+    approvalTimestamps: approveTime
+      ? [...(collection?.approvalTimestamps || []), approveTime]
+      : collection?.approvalTimestamps,
+    mergeTimestamps: pullRequestInfo?.merged_at
+      ? [...(collection?.mergeTimestamps || []), pullRequestInfo?.merged_at]
+      : collection?.mergeTimestamps,
   };
 };

@@ -180,6 +180,19 @@ Identifies standout pull requests, helping quickly locate the most pending PRs a
 2. [Feature: PR Title 2(example)(27)(Author: AlexSim93)](https://github.com/AlexSim93/pull-request-analytics-action/pull/15)
 3. [Feature: PR Title 3(example)(25)(Author: AlexSim93)](https://github.com/AlexSim93/pull-request-analytics-action/pull/15)
 
+### Extended Metrics & Flags
+
+To give a fuller picture of how work flows through reviews, the report now includes the following additional metrics (also available in the `JSON_COLLECTION` output):
+
+- **Commits & files changed per PR** – the workload table now surfaces the average number of commits and files touched per author while the raw values are available under `commitCounts` and `changedFilesCounts`.
+- **Line delta tracking** – `linesAddedList` and `linesRemovedList` show per-PR additions/deletions so you can compute medians or percentiles beyond the aggregated `+additions/-deletions` column.
+- **Comments-to-lines ratio** – the PR quality table includes a `Comments per line changed` column based on the per-PR `commentsPerLineChangeRatio` data to highlight discussion-heavy changes.
+- **Review cycles** – each time a reviewer requests changes and the author pushes an update we count a new cycle; totals are displayed in the PR quality table and exposed via `reviewCycleCounts`.
+- **Stale vs. abandoned PRs** – PRs that stay open longer than `STALE_PR_DAYS_THRESHOLD` or close without merging increment `stalePullRequests`/`abandonedPullRequests` and show up in the workload table's *Stale / Abandoned PRs* column.
+- **Reviewer overload & pending counts** – `reviewsPending` aggregates open review requests per reviewer and the Code Review Engagement table highlights values that exceed `REVIEWER_MAX_PENDING_THRESHOLD` with ⚠️.
+- **Timeline checkpoints** – new `Time to assignment` and `Time to first update after change request` columns quantify the creation → assignment → review-request → rework timeline, while each PR entry now stores the corresponding timestamps (`assignmentTimestamp`, `reviewRequestTimestamp`, `firstUpdateAfterChangeRequestTimestamp`, `approvalTimestamp`, `mergeTimestamp`).
+- **Reverted PR flagging** – the reverted counter and the per-PR `revertedPrFlag` now detect both `revert-*` branches and labels named `revert`, making reverted work easier to audit.
+
 ## Getting started
 
 To integrate **pull-request-analytics-action** into your GitHub repository, use the following steps. The provided code is a template and can be adjusted to fit your specific requirements:
@@ -258,6 +271,8 @@ Below is a table outlining the various configuration parameters available for **
 | `REVIEW_TIME_INTERVALS`     | Enables viewing the percentage distribution among specified values for the time from opening to review, given in hours. Example: `4, 8, 12`                                                                                                                                                                                                                                                           | -                                                                       |
 | `APPROVAL_TIME_INTERVALS`   | Enables viewing the percentage distribution among specified values for the time from opening to approve, given in hours. Example: `4, 8, 12`                                                                                                                                                                                                                                                          | -                                                                       |
 | `MERGE_TIME_INTERVALS`      | Enables viewing the percentage distribution among specified values for the time from opening to merge, given in hours. Example: `4, 8, 12`                                                                                                                                                                                                                                                            | -                                                                       |
+| `STALE_PR_DAYS_THRESHOLD`   | Number of days an open pull request can stay untouched before being marked as stale. Stale PRs are highlighted in the workload table and in the JSON payload.                                                                                                                                                                                                                                        | `14`                                                                    |
+| `REVIEWER_MAX_PENDING_THRESHOLD` | Soft limit for pending review requests per reviewer. Values greater than this number are highlighted with ⚠️ in the code-review-engagement table to surface reviewer overload.                                                                                                                                                                                                                | `5`                                                                     |
 | `TOP_LIST_AMOUNT`           | The number of pull request links to display in the lists for longest-pending reviews, longest-pending approvals, longest-pending merges, the largest and the most commented PRs. Lists will be sorted in descending order, showing the PR title and its value.                                                                                                                                        | `5`                                                                     |
 | `REPORT_DATE_START`         | Sets the start of the period for generating the report. Use the format **d/MM/yyyy**. The end of the period can be specified with the `REPORT_DATE_END` input. `REPORT_PERIOD` takes precedence over `REPORT_DATE_START`. Example: `20/10/2023`                                                                                                                                                       | -                                                                       |
 | `REPORT_DATE_END`           | Sets the end of the period for generating the report. Use the format **d/MM/yyyy**. The start of the period can be specified with the `REPORT_DATE_START` input. Example: `25/10/2023`                                                                                                                                                                                                                | -                                                                       |
@@ -296,6 +311,55 @@ Below is a table describing the possible outputs of **pull-request-analytics-act
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `JSON_COLLECTION` | A string output containing a JSON object with all the data collected by the action. To receive this output, add `collection` to `EXECUTION_OUTCOME`. |
 | `MARKDOWN`        | An output containing the report as a markdown string. To receive this output, add `markdown` to `EXECUTION_OUTCOME`.                                 |
+
+### Sample collection payload
+
+```json
+{
+  "dev1": {
+    "total": {
+      "opened": 2,
+      "commitCounts": [3, 1],
+      "changedFilesCounts": [4, 2],
+      "linesAddedList": [210, 120],
+      "linesRemovedList": [50, 10],
+      "commentsPerLineChangeRatio": [0.45, 0.21],
+      "reviewCycleCounts": [1, 0],
+      "stalePullRequests": 1,
+      "assignmentTimes": [35],
+      "firstUpdateAfterRequestTimes": [120],
+      "pullRequestsInfo": [
+        {
+          "number": 42,
+          "commitCount": 3,
+          "filesChanged": 4,
+          "reviewCycleCount": 1,
+          "stalePrFlag": true,
+          "revertedPrFlag": false,
+          "assignmentTimestamp": "2024-05-06T10:03:00Z",
+          "reviewRequestTimestamp": "2024-05-06T10:05:00Z",
+          "firstUpdateAfterChangeRequestTimestamp": "2024-05-07T08:15:00Z",
+          "approvalTimestamp": "2024-05-07T14:00:00Z",
+          "mergeTimestamp": "2024-05-08T09:45:00Z"
+        }
+      ]
+    }
+  },
+  "reviewerA": {
+    "total": {
+      "reviewsPending": 2,
+      "reviewsConducted": {
+        "total": {
+          "total": 5,
+          "approved": 3
+        }
+      }
+    }
+  }
+}
+```
+
+The snippet above (trimmed for brevity) shows how the new metrics appear for both an author (`dev1`) and a reviewer (`reviewerA`).
 
 ## Recommendations and Tips
 

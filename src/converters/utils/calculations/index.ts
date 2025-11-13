@@ -12,3 +12,5 @@ export { calcDraftTime } from "./calcDraftTime";
 export { getResponses } from "./getResponses";
 export { deletionCoefficient } from "./constants";
 export { checkUserInclusive } from "./checkUserInclusive";
+export { calcReviewCycles } from "./calcReviewCycles";
+export { isStalePullRequest, isAbandonedPullRequest } from "./isStalePullRequest";
