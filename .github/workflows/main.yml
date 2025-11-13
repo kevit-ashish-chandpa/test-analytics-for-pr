@@ -32,4 +32,4 @@ jobs:
                   HIDE_USERS: 'youtube-scrapping-team,Employee-Offboarding,developers-jump-start,dependabot[bot],Bar Buddy devs,Backend Team Bot Activity Analytics,OpenAI-Demo,Node Interns 2024,Trainee-Backend,The Warriors,Betbricks,Kevit-AI-Team,Madeira-Devs,R3Stemsell-Openai,Sys-Config-Check-Team,Canada Streamhub Backend Team,Canada Streamhub Frontend Team,Cedar Shores Backend Team,Cedar Shores Frontend Team,The Hannacup Backend Team,Elevonix developers,orient-museum-BE,Quick Projects,RS recuitment Team,Trainee-Backend-2023,Winrest-AI-Bot Team,winrest-developer-team-write,WBCA Member Backend Team,Zavo Platform Middleware,M2PG-Payment-Gateway Team Leads,M2PG-Payment-Gateway Backend Team,M2PG-Payment-Gateway Frontend Team'
                   STALE_PR_DAYS_THRESHOLD: '14' # Optional: tweak if you want a shorter/longer stale window
                   REVIEWER_MAX_PENDING_THRESHOLD: '5' # Optional: change to the warning limit that makes sense for your team
-                  EXECUTION_OUTCOME: 'new-issue , collection'
+                  EXECUTION_OUTCOME: 'collection'
