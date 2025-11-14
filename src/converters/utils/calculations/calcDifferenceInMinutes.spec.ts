@@ -131,4 +131,9 @@ describe("check calcDifferenceInMinutes", () => {
     const endDate = "2023-11-08T15:30:00Z";
     expect(calcDifferenceInMinutes(startDate, endDate, coreHours)).toBe(8400);
   });
+  it("returns null when end precedes start", () => {
+    const startDate = "2023-10-20T15:30:00Z";
+    const endDate = "2023-10-19T15:30:00Z";
+    expect(calcDifferenceInMinutes(startDate, endDate, coreHours)).toBeNull();
+  });
 });

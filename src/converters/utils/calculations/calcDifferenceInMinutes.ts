@@ -12,7 +12,7 @@ export const calcDifferenceInMinutes = (
   const secondDate = secondIsoDate
     ? setSeconds(parseISO(secondIsoDate), 0)
     : null;
-  if (firstDate && secondDate) {
+  if (firstDate && secondDate && secondDate >= firstDate) {
     return (
       differenceInMinutes(secondDate, firstDate) -
       calcWeekendMinutes(firstDate, secondDate, holidays) -
