@@ -517,7 +517,7 @@ const calcDifferenceInMinutes = (firstIsoDate, secondIsoDate, coreHours, holiday
     const secondDate = secondIsoDate
         ? (0, date_fns_1.setSeconds)((0, date_fns_1.parseISO)(secondIsoDate), 0)
         : null;
-    if (firstDate && secondDate) {
+    if (firstDate && secondDate && secondDate >= firstDate) {
         return ((0, date_fns_1.differenceInMinutes)(secondDate, firstDate) -
             (0, calcWeekendMinutes_1.calcWeekendMinutes)(firstDate, secondDate, holidays) -
             (coreHours.startOfWorkingTime && coreHours.endOfWorkingTime
