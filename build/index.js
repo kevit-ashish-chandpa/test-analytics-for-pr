@@ -2087,84 +2087,89 @@ const createOutput = async (data) => {
         const users = (0, utils_2.getDisplayUserList)(data);
         const dates = (0, utils_2.sortCollectionsByDate)(data.total);
         if (outcome === "new-issue" || outcome === "existing-issue") {
-            const issueNumber = outcome === "existing-issue" ? (0, utils_1.getValueAsIs)("ISSUE_NUMBER") : undefined;
-            const markdown = (0, view_1.createMarkdown)(data, users, ["total"], "Pull Request report total");
-            if (outcome.includes("existing-issue")) {
-                await (0, requests_1.clearComments)(issueNumber);
-            }
-            const issue = await (0, requests_1.createIssue)(markdown, issueNumber);
-            const monthComparison = (0, utils_2.createTimelineMonthComparisonChart)(data, dates, users, [
-                {
-                    title: "Pull Request report total",
-                    link: `${issue.data.html_url}#`,
-                },
-            ]);
-            const comments = [];
-            if (monthComparison) {
-                const comparisonComment = await octokit_1.octokit.rest.issues.createComment({
-                    repo: (0, utils_1.getValueAsIs)("GITHUB_REPO_FOR_ISSUE"),
-                    owner: (0, utils_1.getValueAsIs)("GITHUB_OWNER_FOR_ISSUE"),
-                    issue_number: issue.data.number,
-                    body: monthComparison,
-                });
-                comments.push({
-                    comment: comparisonComment,
-                    title: "retrospective timeline",
-                });
-            }
-            if ((0, utils_1.getValueAsIs)("SHOW_CORRELATION_GRAPHS") === "true") {
-                const dependencyComment = await octokit_1.octokit.rest.issues.createComment({
-                    repo: (0, utils_1.getValueAsIs)("GITHUB_REPO_FOR_ISSUE"),
-                    owner: (0, utils_1.getValueAsIs)("GITHUB_OWNER_FOR_ISSUE"),
-                    issue_number: issue.data.number,
-                    body: (0, utils_2.createDependencyMarkdown)(data, users, [
-                        {
-                            title: "Pull Request report total",
-                            link: `${issue.data.html_url}#`,
-                        },
-                    ]),
-                });
-                comments.push({
-                    comment: dependencyComment,
-                    title: "Correlation Graphs",
-                });
-            }
-            if ((0, utils_1.getValueAsIs)("SHOW_ACTIVITY_TIME_GRAPHS") === "true") {
-                const activityComment = await octokit_1.octokit.rest.issues.createComment({
-                    repo: (0, utils_1.getValueAsIs)("GITHUB_REPO_FOR_ISSUE"),
-                    owner: (0, utils_1.getValueAsIs)("GITHUB_OWNER_FOR_ISSUE"),
-                    issue_number: issue.data.number,
-                    body: (0, createActivityTimeMarkdown_1.createActivityTimeMarkdown)(data, users, [
-                        {
-                            title: "Pull Request report total",
-                            link: `${issue.data.html_url}#`,
-                        },
-                    ]),
-                });
-                comments.push({
-                    comment: activityComment,
-                    title: "Activity time Graphs",
-                });
-            }
-            console.log("Issue successfully created.");
-            for (let date of dates) {
-                if (date === "total")
-                    continue;
-                const commentMarkdown = (0, view_1.createMarkdown)(data, users, [date], `Pull Request report ${date}`, [
+            try {
+                const issueNumber = outcome === "existing-issue" ? (0, utils_1.getValueAsIs)("ISSUE_NUMBER") : undefined;
+                const markdown = (0, view_1.createMarkdown)(data, users, ["total"], "Pull Request report total");
+                if (outcome.includes("existing-issue")) {
+                    await (0, requests_1.clearComments)(issueNumber);
+                }
+                const issue = await (0, requests_1.createIssue)(markdown, issueNumber);
+                const monthComparison = (0, utils_2.createTimelineMonthComparisonChart)(data, dates, users, [
                     {
                         title: "Pull Request report total",
                         link: `${issue.data.html_url}#`,
                     },
                 ]);
-                if (commentMarkdown === "" || dates.length < 3)
-                    continue;
-                const comment = await (0, requests_1.createComment)(issue.data.number, commentMarkdown);
-                comments.push({ comment, title: date });
+                const comments = [];
+                if (monthComparison) {
+                    const comparisonComment = await octokit_1.octokit.rest.issues.createComment({
+                        repo: (0, utils_1.getValueAsIs)("GITHUB_REPO_FOR_ISSUE"),
+                        owner: (0, utils_1.getValueAsIs)("GITHUB_OWNER_FOR_ISSUE"),
+                        issue_number: issue.data.number,
+                        body: monthComparison,
+                    });
+                    comments.push({
+                        comment: comparisonComment,
+                        title: "retrospective timeline",
+                    });
+                }
+                if ((0, utils_1.getValueAsIs)("SHOW_CORRELATION_GRAPHS") === "true") {
+                    const dependencyComment = await octokit_1.octokit.rest.issues.createComment({
+                        repo: (0, utils_1.getValueAsIs)("GITHUB_REPO_FOR_ISSUE"),
+                        owner: (0, utils_1.getValueAsIs)("GITHUB_OWNER_FOR_ISSUE"),
+                        issue_number: issue.data.number,
+                        body: (0, utils_2.createDependencyMarkdown)(data, users, [
+                            {
+                                title: "Pull Request report total",
+                                link: `${issue.data.html_url}#`,
+                            },
+                        ]),
+                    });
+                    comments.push({
+                        comment: dependencyComment,
+                        title: "Correlation Graphs",
+                    });
+                }
+                if ((0, utils_1.getValueAsIs)("SHOW_ACTIVITY_TIME_GRAPHS") === "true") {
+                    const activityComment = await octokit_1.octokit.rest.issues.createComment({
+                        repo: (0, utils_1.getValueAsIs)("GITHUB_REPO_FOR_ISSUE"),
+                        owner: (0, utils_1.getValueAsIs)("GITHUB_OWNER_FOR_ISSUE"),
+                        issue_number: issue.data.number,
+                        body: (0, createActivityTimeMarkdown_1.createActivityTimeMarkdown)(data, users, [
+                            {
+                                title: "Pull Request report total",
+                                link: `${issue.data.html_url}#`,
+                            },
+                        ]),
+                    });
+                    comments.push({
+                        comment: activityComment,
+                        title: "Activity time Graphs",
+                    });
+                }
+                console.log("Issue successfully created.");
+                for (let date of dates) {
+                    if (date === "total")
+                        continue;
+                    const commentMarkdown = (0, view_1.createMarkdown)(data, users, [date], `Pull Request report ${date}`, [
+                        {
+                            title: "Pull Request report total",
+                            link: `${issue.data.html_url}#`,
+                        },
+                    ]);
+                    if (commentMarkdown === "" || dates.length < 3)
+                        continue;
+                    const comment = await (0, requests_1.createComment)(issue.data.number, commentMarkdown);
+                    comments.push({ comment, title: date });
+                }
+                await (0, requests_1.createIssue)((0, view_1.createMarkdown)(data, users, ["total"], "Pull Request report total", comments.map((comment) => ({
+                    title: `Pull Request report ${comment.title}`,
+                    link: comment.comment.data.html_url,
+                }))), issue.data.number);
             }
-            await (0, requests_1.createIssue)((0, view_1.createMarkdown)(data, users, ["total"], "Pull Request report total", comments.map((comment) => ({
-                title: `Pull Request report ${comment.title}`,
-                link: comment.comment.data.html_url,
-            }))), issue.data.number);
+            catch (error) {
+                console.error("Issue output failed. Skipping issue creation step but continuing with other outputs.", error);
+            }
         }
         if (outcome === "markdown") {
             const monthComparison = (0, utils_1.getMultipleValuesInput)("SHOW_STATS_TYPES").includes(constants_1.showStatsTypes.timeline)
