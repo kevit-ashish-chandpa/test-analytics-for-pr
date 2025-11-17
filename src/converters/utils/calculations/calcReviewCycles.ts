@@ -13,6 +13,7 @@ export type ReviewCycleMeta = {
   cycleCount: number;
   firstChangeRequestTime: string | null;
   firstUpdateAfterChangeRequest: string | null;
+  firstCommitTime: string | null;
 };
 
 const normalizeDate = (value?: string) =>
@@ -84,5 +85,6 @@ export const calcReviewCycles = (
     cycleCount,
     firstChangeRequestTime,
     firstUpdateAfterChangeRequest,
+    firstCommitTime: commitEvents[0]?.created_at || null,
   };
 };

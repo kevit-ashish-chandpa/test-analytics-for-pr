@@ -106,8 +106,12 @@ export const preparePullRequestTimeline = (
     pullRequestInfo?.additions,
     pullRequestInfo?.deletions
   );
-  const { cycleCount, firstChangeRequestTime, firstUpdateAfterChangeRequest } =
-    calcReviewCycles(pullRequestReviews, timelineEvents);
+  const {
+    cycleCount,
+    firstChangeRequestTime,
+    firstUpdateAfterChangeRequest,
+    firstCommitTime,
+  } = calcReviewCycles(pullRequestReviews, timelineEvents);
   const firstUpdateAfterChangeRequestTime = calcDifferenceInMinutes(
     firstChangeRequestTime,
     firstUpdateAfterChangeRequest,
@@ -155,6 +159,24 @@ export const preparePullRequestTimeline = (
   );
   const approvalToMerge = calcDifferenceInMinutes(
     approveTime,
+    pullRequestInfo?.merged_at,
+    {
+      endOfWorkingTime: getValueAsIs("CORE_HOURS_END"),
+      startOfWorkingTime: getValueAsIs("CORE_HOURS_START"),
+    },
+    getMultipleValuesInput("HOLIDAYS")
+  );
+  const codingTime = calcDifferenceInMinutes(
+    firstCommitTime,
+    pullRequestInfo?.created_at,
+    {
+      endOfWorkingTime: getValueAsIs("CORE_HOURS_END"),
+      startOfWorkingTime: getValueAsIs("CORE_HOURS_START"),
+    },
+    getMultipleValuesInput("HOLIDAYS")
+  );
+  const cycleTimeFromFirstCommit = calcDifferenceInMinutes(
+    firstCommitTime,
     pullRequestInfo?.merged_at,
     {
       endOfWorkingTime: getValueAsIs("CORE_HOURS_END"),
@@ -282,6 +304,12 @@ export const preparePullRequestTimeline = (
           typeof updateToApproval === "number" ? updateToApproval : 0,
         approvalToMerge:
           typeof approvalToMerge === "number" ? approvalToMerge : 0,
+        firstCommitTimestamp: firstCommitTime || null,
+        codingTime: typeof codingTime === "number" ? codingTime : 0,
+        cycleTimeFromFirstCommit:
+          typeof cycleTimeFromFirstCommit === "number"
+            ? cycleTimeFromFirstCommit
+            : 0,
       },
     ],
     reviewCycleCounts:
@@ -339,5 +367,16 @@ export const preparePullRequestTimeline = (
       typeof approvalToMerge === "number"
         ? [...(collection?.approvalToMergeTimes || []), approvalToMerge]
         : collection?.approvalToMergeTimes,
+    codingTimes:
+      typeof codingTime === "number"
+        ? [...(collection?.codingTimes || []), codingTime]
+        : collection?.codingTimes,
+    cycleTimesFromFirstCommit:
+      typeof cycleTimeFromFirstCommit === "number"
+        ? [
+            ...(collection?.cycleTimesFromFirstCommit || []),
+            cycleTimeFromFirstCommit,
+          ]
+        : collection?.cycleTimesFromFirstCommit,
   };
 };

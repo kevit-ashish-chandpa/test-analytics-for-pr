@@ -46,6 +46,10 @@ jobs:
               if: always()
               run: |
                   node scripts/collection-to-csv.js reports/collection.json reports/collection.csv
+            - name: 'Generate per-developer metrics'
+              if: always()
+              run: |
+                  node scripts/generate-pr-metrics.js reports/collection.json reports/pr-metrics.csv reports/pr-metrics.md
             - name: 'Upload JSON artifact'
               if: always()
               uses: actions/upload-artifact@v4
@@ -54,3 +58,5 @@ jobs:
                   path: |
                       reports/collection.json
                       reports/collection.csv
+                      reports/pr-metrics.csv
+                      reports/pr-metrics.md

@@ -66,6 +66,9 @@ type PullRequestTimelineInfo = {
   reviewRequestToChangeRequest?: number;
   updateToApproval?: number;
   approvalToMerge?: number;
+  firstCommitTimestamp?: string | null;
+  codingTime?: number;
+  cycleTimeFromFirstCommit?: number;
 };
 
 type Discussion = {
@@ -165,4 +168,6 @@ export type Collection = {
   reviewRequestToChangeRequestTimes?: number[];
   updateToApprovalTimes?: number[];
   approvalToMergeTimes?: number[];
+  codingTimes?: number[];
+  cycleTimesFromFirstCommit?: number[];
 };
