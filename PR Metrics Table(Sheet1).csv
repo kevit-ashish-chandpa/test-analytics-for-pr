@@ -1,0 +1,16 @@
+Metric,What it Measures,Why it Matters,GitHub Data Needed (fields/events),Track?,Possible to Track?
+Cycle Time (first commit ? merge),Total time from first commit on branch to merge,Core flow metric, tells you how long work takes end-to-end,PR: merged_at, Commits: commit.author.date (first one)
+PR Throughput,Number of merged PRs per period,Shows delivery volume and trend,PR: filter by merged_at,Yes,
+Average Coding Time (first commit ? PR opened),"Time before dev raises a PR, Coding Time",Shows if PRs are too large or feedback is delayed,PR: created_at, Commits: earliest commit.author.date,Yes
+Review Waiting Time (PR opened ? first review event),How long PRs wait before someone starts reviewing,Major bottleneck finder,PR: created_at, Review: first submitted_at from /reviews or first PR comment created_at,Yes
+Review Time (first review ? approval/request changes/merge),Actual time reviewers spend,Helps diagnose review load/complexity,"Review start: first review event timestamp; Review end: last event (APPROVED, CHANGES_REQUESTED, or merge merged_at)",Yes,
+Total Comments,All discussion comments on the All PRs,Extra context for heavy discussions,PR comments API, review comments API,
+PR Size Category,Small/medium/large PR based on LOC/files changed,"Large PRs cause slow reviews, bugs, pressure","PR: additions, deletions, changed_files",Yes,
+Average Comments per PR,Count of PR comments,Shows review effort and quality signals,PR comments API: /comments, Review comments: /reviews/comments,Yes
+Requested Changes Count,How often reviewers ask for changes,Reflects code quality or reviewer strictness,Review events: type CHANGES_REQUESTED,Yes,
+Time to Address Changes (changes requested ? approval/merge),How long devs take to respond,Shows responsiveness + clarity of work,Review event timestamps: submitted_at for CHANGES_REQUESTED ? APPROVED or merge,Yes,
+Average LOC Added/Deleted,Actual code churn per PR,Helps spot overly large changes,"PR: additions, deletions",Yes,
+Average Files Added/Deleted,Files involved in PR,Good signal for complexity & scope,PR: changed_files,Yes,
+PRs Without Review,PRs merged/closed with no review events,Process or quality failure,Query reviews: /reviews, if zero ? flagged,Yes
+PRs Without Approval,PRs merged without an approval review,Depends on team rules,Look for review events: APPROVED,Yes,
+Agreed / Disagreed / Total discussions received,Need to understand first,Need to understand first,-,No,

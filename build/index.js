@@ -771,6 +771,7 @@ const calcReviewCycles = (reviews = [], timelineEvents = []) => {
         cycleCount,
         firstChangeRequestTime,
         firstUpdateAfterChangeRequest,
+        firstCommitTime: commitEvents[0]?.created_at || null,
     };
 };
 exports.calcReviewCycles = calcReviewCycles;
@@ -1651,7 +1652,7 @@ const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], re
         startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
     }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
     const pullRequestSize = (0, calculations_1.getPullRequestSize)(pullRequestInfo?.additions, pullRequestInfo?.deletions);
-    const { cycleCount, firstChangeRequestTime, firstUpdateAfterChangeRequest } = (0, calculations_1.calcReviewCycles)(pullRequestReviews, timelineEvents);
+    const { cycleCount, firstChangeRequestTime, firstUpdateAfterChangeRequest, firstCommitTime, } = (0, calculations_1.calcReviewCycles)(pullRequestReviews, timelineEvents);
     const firstUpdateAfterChangeRequestTime = (0, calcDifferenceInMinutes_1.calcDifferenceInMinutes)(firstChangeRequestTime, firstUpdateAfterChangeRequest, {
         endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
         startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
@@ -1673,6 +1674,14 @@ const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], re
         startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
     }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
     const approvalToMerge = (0, calcDifferenceInMinutes_1.calcDifferenceInMinutes)(approveTime, pullRequestInfo?.merged_at, {
+        endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
+        startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
+    }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
+    const codingTime = (0, calcDifferenceInMinutes_1.calcDifferenceInMinutes)(firstCommitTime, pullRequestInfo?.created_at, {
+        endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
+        startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
+    }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
+    const cycleTimeFromFirstCommit = (0, calcDifferenceInMinutes_1.calcDifferenceInMinutes)(firstCommitTime, pullRequestInfo?.merged_at, {
         endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
         startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
     }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
@@ -1775,6 +1784,11 @@ const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], re
                     : 0,
                 updateToApproval: typeof updateToApproval === "number" ? updateToApproval : 0,
                 approvalToMerge: typeof approvalToMerge === "number" ? approvalToMerge : 0,
+                firstCommitTimestamp: firstCommitTime || null,
+                codingTime: typeof codingTime === "number" ? codingTime : 0,
+                cycleTimeFromFirstCommit: typeof cycleTimeFromFirstCommit === "number"
+                    ? cycleTimeFromFirstCommit
+                    : 0,
             },
         ],
         reviewCycleCounts: typeof cycleCount === "number"
@@ -1825,6 +1839,15 @@ const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], re
         approvalToMergeTimes: typeof approvalToMerge === "number"
             ? [...(collection?.approvalToMergeTimes || []), approvalToMerge]
             : collection?.approvalToMergeTimes,
+        codingTimes: typeof codingTime === "number"
+            ? [...(collection?.codingTimes || []), codingTime]
+            : collection?.codingTimes,
+        cycleTimesFromFirstCommit: typeof cycleTimeFromFirstCommit === "number"
+            ? [
+                ...(collection?.cycleTimesFromFirstCommit || []),
+                cycleTimeFromFirstCommit,
+            ]
+            : collection?.cycleTimesFromFirstCommit,
     };
 };
 exports.preparePullRequestTimeline = preparePullRequestTimeline;
@@ -3640,19 +3663,13 @@ const createStageDurationTable = (data, type, users, date) => {
     const tableRows = users
         .filter((user) => data[user]?.[date]?.merged)
         .map((user) => {
-        const assignment = data[user]?.[date]?.[type]?.assignmentTime || 0;
-        const assignmentToReview = data[user]?.[date]?.[type]?.assignmentToReviewRequest || 0;
-        const reviewToChange = data[user]?.[date]?.[type]?.reviewRequestToChangeRequest || 0;
-        const changeToUpdate = data[user]?.[date]?.[type]?.firstUpdateAfterChangeRequestTime || 0;
-        const updateToApprovalValue = data[user]?.[date]?.[type]?.updateToApproval || 0;
-        const approvalToMergeValue = data[user]?.[date]?.[type]?.approvalToMerge || 0;
         const stageValues = [
-            assignment,
-            assignmentToReview,
-            reviewToChange,
-            changeToUpdate,
-            updateToApprovalValue,
-            approvalToMergeValue,
+            data[user]?.[date]?.[type]?.assignmentTime || 0,
+            data[user]?.[date]?.[type]?.assignmentToReviewRequest || 0,
+            data[user]?.[date]?.[type]?.reviewRequestToChangeRequest || 0,
+            data[user]?.[date]?.[type]?.firstUpdateAfterChangeRequestTime || 0,
+            data[user]?.[date]?.[type]?.updateToApproval || 0,
+            data[user]?.[date]?.[type]?.approvalToMerge || 0,
         ];
         if (stageValues.some((value) => value)) {
             hasData = true;
@@ -3662,9 +3679,8 @@ const createStageDurationTable = (data, type, users, date) => {
             ...stageValues.map((value) => (0, formatMinutesDuration_1.formatMinutesDuration)(value || 0)),
         ];
     });
-    if (!hasData) {
+    if (!hasData)
         return "";
-    }
     return (0, common_1.createTable)({
         title: `Stage duration breakdown(${type}) ${date}`,
         description: "**Creation → Assignment** through **Approval → Merge** show the average time spent in each stage. These values complement the overall creation → milestone durations shown in the main timeline table.",
