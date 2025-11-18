@@ -195,6 +195,7 @@ To give a fuller picture of how work flows through reviews, the report now inclu
 - **Timeline checkpoints** – new `Time to assignment`, `Assignment → Review request`, `Review request → Changes requested`, `Change request → Update`, `Update → Approval`, and `Approval → Merge` columns quantify each stage of the review lifecycle, while each PR entry stores the corresponding timestamps (`assignmentTimestamp`, `reviewRequestTimestamp`, `firstUpdateAfterChangeRequestTimestamp`, `approvalTimestamp`, `mergeTimestamp`).
 - **Per-developer KPI exports** – every run now produces `pr-metrics.csv` and `pr-metrics.md` artifacts that match the “PR Metrics Table” workbook, so you can track cycle time, coding time, review waiting time, size mix, requested changes, and more for each developer.
 - **Reverted PR flagging** – the reverted counter and the per-PR `revertedPrFlag` now detect both `revert-*` branches and labels named `revert`, making reverted work easier to audit.
+- **Extended metrics digest** – `extended-metrics.json` and `extended-metrics.md` capture the new KPIs per developer, presenting them in a compact table plus Mermaid xycharts that make comparing throughput and cycle times trivial.
 
 ### Flow Efficiency Metrics
 
@@ -214,6 +215,14 @@ Every `JSON_COLLECTION` entry now exposes an `extendedMetrics` block with the fo
 - **Average Files Changed** – `averageFilesChanged` complements the LOC metrics to highlight breadth of changes.
 - **PRs Without Review** – `prsWithoutReview` counts closed or merged PRs that never received a reviewer comment or review event.
 - **PRs Without Approval** – `prsWithoutApproval` counts merged PRs that never reached the required approvals (merged straight after changes or without an approval event).
+
+After each run you can snapshot these numbers in isolation by executing:
+
+```bash
+node scripts/generate-extended-metrics-md.js reports/collection.json reports/extended-metrics.json reports/extended-metrics.md
+```
+
+The command stores a compact JSON payload and a Markdown report (table + Mermaid charts) in the `reports/` folder so you can quickly share or visualize the KPIs per developer.
 
 ## Getting started
 
@@ -259,6 +268,42 @@ To integrate **pull-request-analytics-action** into your GitHub repository, use 
 9. Open the **Actions** tab and select the created action from the left sidebar. In our case, it's `PR Analytics`.
 10. In your repository, go to the **Actions** tab. Select **PR analytics** and start it via "Run workflow". Fill in any necessary parameters and execute the action. Depending on the number of PRs, it may take from 1 to several minutes to complete.
 11. Open the **Issues** tab, where you'll find the generated report.
+
+### Running locally
+
+Use these steps to dry-run the action against real repositories before pushing changes:
+
+1. Install dependencies: `npm install`.
+2. Build the bundle: `npm run build` (rerun after editing `src/`).
+3. Export the required inputs as environment variables. At a minimum:
+   ```bash
+   export GITHUB_TOKEN=ghp_your_pat
+   export GITHUB_OWNERS_REPOS="owner/repo,owner2/repo2"
+   export GITHUB_REPO_FOR_ISSUE=pr-analytics
+   export GITHUB_OWNER_FOR_ISSUE=your-org
+   export EXECUTION_OUTCOME=collection
+   export AMOUNT=200
+   export REPORT_DATE_START=01/01/2024
+   export REPORT_DATE_END=31/01/2024
+   ```
+   Add any other inputs you normally rely on (`CORE_HOURS_*`, `SHOW_STATS_TYPES`, etc.).
+4. Run the action entry point and capture the JSON output: `node build/index.js > reports/collection.json`.
+5. Transform artifacts for analysis:
+   - `node scripts/collection-to-csv.js reports/collection.json reports/collection.csv`
+   - `node scripts/generate-pr-metrics.js reports/collection.json reports/pr-metrics.csv reports/pr-metrics.md`
+   - `node scripts/generate-extended-metrics-md.js reports/collection.json reports/extended-metrics.json reports/extended-metrics.md`
+6. Inspect the files in `reports/` (Markdown tables, Mermaid charts, CSVs, raw JSON). Delete or overwrite them between runs as needed.
+7. Test suite (optional but recommended before committing): `npm test -- --runInBand`. The `--runInBand` flag avoids node worker crashes in constrained environments.
+
+### Production / CI usage
+
+The repository already ships with `.github/workflows/main.yml`, which is meant to be the production workflow that teams trigger through `workflow_dispatch`.
+
+- It checks out the code, invokes the action (`uses: kevit-ashish-chandpa/test-analytics-for-pr@v4`), and requests both the Markdown issue report and the `JSON_COLLECTION`.
+- Follow-up steps persist `reports/collection.json`, convert it to CSV, run the per-developer table generator, and run the new `generate-extended-metrics-md.js` helper. All artifacts are uploaded together under the `pr-analytics-collection` name.
+- Run it from the Actions tab → “PR Analytics” → “Run workflow”, supplying `report_date_start`, `report_date_end`, and `projects` (comma-separated `owner/repo` values). The `PERSONAL_TOKEN` secret must have at least `repo` + `read:org` scopes to fetch commits, timeline events, and teams.
+- Monitor execution via workflow logs; each API batch logs progress, and failures are reported as GitHub warnings. When the job finishes you’ll get: a refreshed issue comment thread (if `EXECUTION_OUTCOME` includes `new-issue`/`existing-issue`), the JSON/CSV/Markdown artifacts, and Mixpanel analytics (if enabled).
+- Because the workflow mirrors the local commands (same helper scripts, same artifact names), you can validate changes locally and trust that production runs will produce identical structures.
 
 ## Using GitHub Enterprise Server
 
@@ -337,6 +382,8 @@ Below is a table describing the possible outputs of **pull-request-analytics-act
 | `reports/collection.csv`     | Flattened version of the collection (one row per user/date) for spreadsheet-friendly analysis.                                                      |
 | `reports/pr-metrics.csv`     | Per-developer KPI export that mirrors the “PR Metrics Table” workbook with live values from the report window.                                     |
 | `reports/pr-metrics.md`      | Markdown summary of the same KPI data, grouped by developer for easy sharing in issues or docs.                                                     |
+| `reports/extended-metrics.json` | Minimal JSON containing only the flow-efficiency metrics per developer (cycle time, throughput, coding time, review waits, etc.).                 |
+| `reports/extended-metrics.md`   | Markdown table + xycharts (Mermaid) that visualize the extended metrics for every developer side by side.                                        |
 
 ### Sample collection payload
 

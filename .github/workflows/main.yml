@@ -50,6 +50,10 @@ jobs:
               if: always()
               run: |
                   node scripts/generate-pr-metrics.js reports/collection.json reports/pr-metrics.csv reports/pr-metrics.md
+            - name: 'Generate extended metrics markdown'
+              if: always()
+              run: |
+                  node scripts/generate-extended-metrics-md.js reports/collection.json reports/extended-metrics.json reports/extended-metrics.md
             - name: 'Upload JSON artifact'
               if: always()
               uses: actions/upload-artifact@v4
@@ -60,3 +64,5 @@ jobs:
                       reports/collection.csv
                       reports/pr-metrics.csv
                       reports/pr-metrics.md
+                      reports/extended-metrics.json
+                      reports/extended-metrics.md
