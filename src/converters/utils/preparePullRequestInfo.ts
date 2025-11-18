@@ -4,6 +4,7 @@ import {
   getPullRequestSize,
   isAbandonedPullRequest,
   isStalePullRequest,
+  getPullRequestSizeCategory,
 } from "./calculations";
 import { checkRevert } from "./checkRevert";
 import { getValueAsIs } from "../../common/utils";
@@ -38,6 +39,11 @@ export const preparePullRequestInfo = (
   const isStale = isStalePullRequest(pullRequest, staleThreshold);
   const isAbandoned = isAbandonedPullRequest(pullRequest);
   const isReverted = checkRevert(pullRequest?.head?.ref, pullRequest?.labels);
+  const sizeCategory = getPullRequestSizeCategory(
+    pullRequest?.additions,
+    pullRequest?.deletions,
+    pullRequest?.changed_files
+  );
 
   return {
     ...collection,
@@ -72,5 +78,6 @@ export const preparePullRequestInfo = (
       (collection?.stalePullRequests || 0) + (isStale ? 1 : 0),
     abandonedPullRequests:
       (collection?.abandonedPullRequests || 0) + (isAbandoned ? 1 : 0),
+    sizeCategories: [...(collection?.sizeCategories || []), sizeCategory],
   };
 };

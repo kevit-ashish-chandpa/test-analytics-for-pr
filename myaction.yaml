@@ -41,11 +41,23 @@ jobs:
               if: always()
               run: |
                   mkdir -p reports
-                  echo '${{ steps.analytics.outputs.JSON_COLLECTION }}' > reports/collection.json
+                  cat <<'JSON' > reports/collection.json
             - name: 'Convert collection to CSV'
               if: always()
               run: |
-                  node scripts/collection-to-csv.js reports/collection.json reports/collection.csv
+                  if [ -s reports/collection.json ]; then
+                    node scripts/collection-to-csv.js reports/collection.json reports/collection.csv
+                  else
+                    echo "collection.json is empty. Skipping CSV generation."
+                  fi
+            - name: 'Generate per-developer metrics'
+              if: always()
+              run: |
+                  if [ -s reports/collection.json ]; then
+                    node scripts/generate-pr-metrics.js reports/collection.json reports/pr-metrics.csv reports/pr-metrics.md
+                  else
+                    echo "collection.json is empty. Skipping KPIs export."
+                  fi
             - name: 'Upload JSON artifact'
               if: always()
               uses: actions/upload-artifact@v4
@@ -54,3 +66,5 @@ jobs:
                   path: |
                       reports/collection.json
                       reports/collection.csv
+                      reports/pr-metrics.csv
+                      reports/pr-metrics.md

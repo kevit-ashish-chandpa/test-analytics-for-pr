@@ -88,7 +88,8 @@ export const collectData = (
             reviewRequests?.[0],
             statuses,
             get(collection, [key, innerKey], {}),
-            data.events[index] || []
+            data.events[index] || [],
+            data.commits[index] || []
           )
         );
       });

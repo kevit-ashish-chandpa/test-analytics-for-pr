@@ -50,18 +50,42 @@ async function main() {
 
     const teams = await getTeams(orgs);
 
+    const failedRepositories: string[] = [];
     for (let i = 0; i < repos.length; i++) {
-      const result = await makeComplexRequest(
-        parseInt(getValueAsIs("AMOUNT")),
-        {
-          owner: repos[i][0],
-          repo: repos[i][1],
-        },
-        {
-          skipComments: checkCommentSkip(),
-        }
+      try {
+        const result = await makeComplexRequest(
+          parseInt(getValueAsIs("AMOUNT")),
+          {
+            owner: repos[i][0],
+            repo: repos[i][1],
+          },
+          {
+            skipComments: checkCommentSkip(),
+          }
+        );
+        data.push(result);
+      } catch (error) {
+        const repoName = `${repos[i][0]}/${repos[i][1]}`;
+        failedRepositories.push(repoName);
+        console.error(
+          `Failed to retrieve data for ${repoName}. Continuing with remaining repositories.`,
+          error
+        );
+      }
+    }
+
+    if (failedRepositories.length) {
+      core.warning(
+        `The following repositories could not be processed: ${failedRepositories.join(
+          ", "
+        )}`
       );
-      data.push(result);
+    }
+
+    if (data.length === 0) {
+      throw new Error(
+        "No repositories could be processed. Please verify repository access and configuration."
+      );
     }
 
     console.log("Data successfully retrieved. Starting report calculations.");
@@ -76,12 +100,14 @@ async function main() {
         events: [...acc.events, ...element!.events],
         pullRequestInfo: [...acc?.pullRequestInfo, ...element!.pullRequestInfo],
         comments: [...acc?.comments, ...element!.comments],
+        commits: [...acc?.commits, ...element!.commits],
       }),
       {
         ownerRepo: "",
         events: [],
         pullRequestInfo: [],
         comments: [],
+        commits: [],
       }
     );
     const preparedData = collectData(mergedData, teams);

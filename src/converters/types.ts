@@ -1,4 +1,5 @@
 import { PullRequestSize } from "./utils/calculations/getPullRequestSize";
+import { PullRequestSizeCategory } from "./utils/calculations/getPullRequestSizeCategory";
 
 type ReviewTypeStats = {
   [key: string]: number;
@@ -66,6 +67,12 @@ type PullRequestTimelineInfo = {
   reviewRequestToChangeRequest?: number;
   updateToApproval?: number;
   approvalToMerge?: number;
+  firstCommitTimestamp?: string | null;
+  codingTime?: number;
+  cycleTimeFromFirstCommit?: number;
+  reviewTimeFromFirstReview?: number;
+  timeToAddressChanges?: number;
+  sizeCategory?: PullRequestSizeCategory;
 };
 
 type Discussion = {
@@ -92,6 +99,7 @@ export type Collection = {
   timeToReview?: number[];
   timeToApprove?: number[];
   timeToMerge?: number[];
+  reviewTimes?: number[];
   timeFromOpenToResponse?: number[];
   timeFromInitialRequestToResponse?: number[];
   timeFromRepeatedRequestToResponse?: number[];
@@ -165,4 +173,29 @@ export type Collection = {
   reviewRequestToChangeRequestTimes?: number[];
   updateToApprovalTimes?: number[];
   approvalToMergeTimes?: number[];
+  codingTimes?: number[];
+  cycleTimesFromFirstCommit?: number[];
+  timeToAddressChangeTimes?: number[];
+  sizeCategories?: PullRequestSizeCategory[];
+  mergedWithoutApproval?: number;
+  completedWithoutReview?: number;
+  extendedMetrics?: ExtendedMetrics;
+};
+
+export type ExtendedMetrics = {
+  cycleTimeFromFirstCommitAverage?: number;
+  prThroughput: number;
+  averageCodingTime?: number;
+  reviewWaitingTimeAverage?: number;
+  reviewTimeAverage?: number;
+  totalComments: number;
+  prSizeCategoryCounts: Record<PullRequestSizeCategory, number>;
+  averageCommentsPerPr?: number;
+  requestedChangesCount: number;
+  timeToAddressChangesAverage?: number;
+  averageLocAdded?: number;
+  averageLocDeleted?: number;
+  averageFilesChanged?: number;
+  prsWithoutReview: number;
+  prsWithoutApproval: number;
 };

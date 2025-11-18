@@ -13,6 +13,7 @@ export type ReviewCycleMeta = {
   cycleCount: number;
   firstChangeRequestTime: string | null;
   firstUpdateAfterChangeRequest: string | null;
+  firstCommitTime: string | null;
 };
 
 const normalizeDate = (value?: string) =>
@@ -20,7 +21,8 @@ const normalizeDate = (value?: string) =>
 
 export const calcReviewCycles = (
   reviews: ReviewEvent[] = [],
-  timelineEvents: TimelineEvent[] = []
+  timelineEvents: TimelineEvent[] = [],
+  commits: any[] = []
 ): ReviewCycleMeta => {
   const changeRequests = reviews
     .filter(
@@ -37,8 +39,26 @@ export const calcReviewCycles = (
       return aTime - bTime;
     });
 
-  const commitEvents = timelineEvents
+  const commitsFromTimeline = timelineEvents
     .filter((event) => event.event === "committed" && event.created_at)
+    .map((event) => ({ created_at: event.created_at }));
+
+  const commitsFromPullRequest =
+    commits?.map((commit) => {
+      return {
+        created_at:
+          commit?.commit?.author?.date ||
+          commit?.commit?.committer?.date ||
+          commit?.author?.date ||
+          commit?.committer?.date,
+      };
+    }) || [];
+
+  const commitEvents = (commitsFromPullRequest.length
+    ? commitsFromPullRequest
+    : commitsFromTimeline
+  )
+    .filter((event) => event.created_at)
     .sort((a, b) => {
       const aTime = normalizeDate(a.created_at || "");
       const bTime = normalizeDate(b.created_at || "");
@@ -84,5 +104,6 @@ export const calcReviewCycles = (
     cycleCount,
     firstChangeRequestTime,
     firstUpdateAfterChangeRequest,
+    firstCommitTime: commitEvents[0]?.created_at || null,
   };
 };

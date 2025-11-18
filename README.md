@@ -193,7 +193,27 @@ To give a fuller picture of how work flows through reviews, the report now inclu
 - **Stale vs. abandoned PRs** – PRs that stay open longer than `STALE_PR_DAYS_THRESHOLD` or close without merging increment `stalePullRequests`/`abandonedPullRequests` and show up in the workload table's *Stale / Abandoned PRs* column.
 - **Reviewer overload & pending counts** – `reviewsPending` aggregates open review requests per reviewer and the Code Review Engagement table highlights values that exceed `REVIEWER_MAX_PENDING_THRESHOLD` with ⚠️.
 - **Timeline checkpoints** – new `Time to assignment`, `Assignment → Review request`, `Review request → Changes requested`, `Change request → Update`, `Update → Approval`, and `Approval → Merge` columns quantify each stage of the review lifecycle, while each PR entry stores the corresponding timestamps (`assignmentTimestamp`, `reviewRequestTimestamp`, `firstUpdateAfterChangeRequestTimestamp`, `approvalTimestamp`, `mergeTimestamp`).
+- **Per-developer KPI exports** – every run now produces `pr-metrics.csv` and `pr-metrics.md` artifacts that match the “PR Metrics Table” workbook, so you can track cycle time, coding time, review waiting time, size mix, requested changes, and more for each developer.
 - **Reverted PR flagging** – the reverted counter and the per-PR `revertedPrFlag` now detect both `revert-*` branches and labels named `revert`, making reverted work easier to audit.
+
+### Flow Efficiency Metrics
+
+Every `JSON_COLLECTION` entry now exposes an `extendedMetrics` block with the following pull-request KPIs (all durations continue to respect your configured working hours and holidays):
+
+- **Cycle Time (first commit → merge)** – `cycleTimeFromFirstCommitAverage` reports the average time from the first branch commit (retrieved from the PR commits API) until the PR is merged.
+- **PR Throughput** – `prThroughput` counts how many PRs were merged in the reporting window.
+- **Average Coding Time (first commit → PR open)** – `averageCodingTime` highlights how long work stays in coding before the PR is created.
+- **Review Waiting Time (PR open → first review)** – `reviewWaitingTimeAverage` reflects how long authors wait before a reviewer engages.
+- **Review Time (first review → approval/change request/merge)** – `reviewTimeAverage` measures how long a review cycle takes once somebody starts reviewing (stops at the first approval, change request, or merge).
+- **Total Comments** – `totalComments` adds up both review comments and discussion comments so you can quickly see the level of conversation.
+- **PR Size Category mix** – `prSizeCategoryCounts` buckets every PR as Small (≤250 LOC & ≤5 files), Medium (≤1,000 LOC & ≤20 files), or Large (everything else). Each PR entry also records its `sizeCategory`.
+- **Average Comments per PR** – `averageCommentsPerPr` gives a density measure by dividing total comments by processed PR count.
+- **Requested Changes Count** – `requestedChangesCount` captures how many “changes requested” reviews were logged.
+- **Time to Address Changes (changes requested → approval/merge)** – `timeToAddressChangesAverage` shows how long it took to clear requested changes.
+- **Average LOC Added / Deleted** – `averageLocAdded` and `averageLocDeleted` summarize the typical amount of code churn per PR.
+- **Average Files Changed** – `averageFilesChanged` complements the LOC metrics to highlight breadth of changes.
+- **PRs Without Review** – `prsWithoutReview` counts closed or merged PRs that never received a reviewer comment or review event.
+- **PRs Without Approval** – `prsWithoutApproval` counts merged PRs that never reached the required approvals (merged straight after changes or without an approval event).
 
 ## Getting started
 
@@ -309,10 +329,14 @@ Use these parameters to tailor the **pull-request-analytics-action** to your pro
 
 Below is a table describing the possible outputs of **pull-request-analytics-action**:
 
-| Output Option     | Description                                                                                                                                          |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `JSON_COLLECTION` | A string output containing a JSON object with all the data collected by the action. To receive this output, add `collection` to `EXECUTION_OUTCOME`. |
-| `MARKDOWN`        | An output containing the report as a markdown string. To receive this output, add `markdown` to `EXECUTION_OUTCOME`.                                 |
+| Output Option / Artifact     | Description                                                                                                                                          |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `JSON_COLLECTION`            | A string output containing a JSON object with all the data collected by the action (including the new `extendedMetrics` block for cycle time, throughput, review stages, and comment stats). To receive this output, add `collection` to `EXECUTION_OUTCOME`. |
+| `MARKDOWN`                   | An output containing the report as a markdown string. To receive this output, add `markdown` to `EXECUTION_OUTCOME`.                                 |
+| `reports/collection.json`    | Raw collection payload (same as `JSON_COLLECTION`) saved as an artifact for downstream processing.                                                   |
+| `reports/collection.csv`     | Flattened version of the collection (one row per user/date) for spreadsheet-friendly analysis.                                                      |
+| `reports/pr-metrics.csv`     | Per-developer KPI export that mirrors the “PR Metrics Table” workbook with live values from the report window.                                     |
+| `reports/pr-metrics.md`      | Markdown summary of the same KPI data, grouped by developer for easy sharing in issues or docs.                                                     |
 
 ### Sample collection payload
 
@@ -329,6 +353,8 @@ Below is a table describing the possible outputs of **pull-request-analytics-act
       "reviewCycleCounts": [1, 0],
       "stalePullRequests": 1,
       "assignmentTimes": [35],
+      "codingTimes": [15],
+      "cycleTimesFromFirstCommit": [1440],
       "assignmentToReviewRequestTimes": [10],
       "reviewRequestToChangeRequestTimes": [45],
       "firstUpdateAfterRequestTimes": [120],
@@ -347,6 +373,9 @@ Below is a table describing the possible outputs of **pull-request-analytics-act
           "firstUpdateAfterChangeRequestTimestamp": "2024-05-07T08:15:00Z",
           "approvalTimestamp": "2024-05-07T14:00:00Z",
           "mergeTimestamp": "2024-05-08T09:45:00Z",
+          "firstCommitTimestamp": "2024-05-05T09:00:00Z",
+          "codingTime": 15,
+          "cycleTimeFromFirstCommit": 1440,
           "assignmentToReviewRequest": 10,
           "reviewRequestToChangeRequest": 45,
           "updateToApproval": 90,

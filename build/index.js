@@ -434,7 +434,7 @@ const collectData = (data, teams) => {
                 if ((0, calculations_1.checkUserInclusive)(userKey)) {
                     (0, set_1.default)(collection, [key, innerKey], (0, utils_1.preparePullRequestInfo)(pullRequest, (0, get_1.default)(collection, [key, innerKey], {})));
                 }
-                (0, set_1.default)(collection, [key, innerKey], (0, utils_1.preparePullRequestTimeline)(pullRequest, reviews, reviewRequests?.[0], statuses, (0, get_1.default)(collection, [key, innerKey], {}), data.events[index] || []));
+                (0, set_1.default)(collection, [key, innerKey], (0, utils_1.preparePullRequestTimeline)(pullRequest, reviews, reviewRequests?.[0], statuses, (0, get_1.default)(collection, [key, innerKey], {}), data.events[index] || [], data.commits[index] || []));
             });
         });
         (0, utils_1.prepareReviews)(reviews, collection, dateKey, userKey, (0, calculations_1.getPullRequestSize)(pullRequest?.additions, pullRequest?.deletions), teams);
@@ -459,7 +459,7 @@ exports.collectData = collectData;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.reviewRequestRemoved = exports.reviewedTimelineEvent = exports.convertToDraftTimelineEvent = exports.readyForReviewTimelineEvent = exports.reviewRequestedTimelineEvent = exports.invalidDate = exports.invalidUserLogin = void 0;
+exports.commentedTimelineEvent = exports.reviewRequestRemoved = exports.reviewedTimelineEvent = exports.convertToDraftTimelineEvent = exports.readyForReviewTimelineEvent = exports.reviewRequestedTimelineEvent = exports.invalidDate = exports.invalidUserLogin = void 0;
 exports.invalidUserLogin = "Invalid-User-PRAA";
 exports.invalidDate = "invalidDate";
 exports.reviewRequestedTimelineEvent = "review_requested";
@@ -467,6 +467,7 @@ exports.readyForReviewTimelineEvent = "ready_for_review";
 exports.convertToDraftTimelineEvent = "convert_to_draft";
 exports.reviewedTimelineEvent = "reviewed";
 exports.reviewRequestRemoved = "review_request_removed";
+exports.commentedTimelineEvent = "commented";
 
 
 /***/ }),
@@ -718,7 +719,7 @@ exports.calcPercentileValue = calcPercentileValue;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.calcReviewCycles = void 0;
 const normalizeDate = (value) => value ? new Date(value).getTime() : null;
-const calcReviewCycles = (reviews = [], timelineEvents = []) => {
+const calcReviewCycles = (reviews = [], timelineEvents = [], commits = []) => {
     const changeRequests = reviews
         .filter((review) => (review?.state || "").toLowerCase() === "changes_requested" &&
         (review?.submitted_at || review?.created_at))
@@ -730,8 +731,21 @@ const calcReviewCycles = (reviews = [], timelineEvents = []) => {
         }
         return aTime - bTime;
     });
-    const commitEvents = timelineEvents
+    const commitsFromTimeline = timelineEvents
         .filter((event) => event.event === "committed" && event.created_at)
+        .map((event) => ({ created_at: event.created_at }));
+    const commitsFromPullRequest = commits?.map((commit) => {
+        return {
+            created_at: commit?.commit?.author?.date ||
+                commit?.commit?.committer?.date ||
+                commit?.author?.date ||
+                commit?.committer?.date,
+        };
+    }) || [];
+    const commitEvents = (commitsFromPullRequest.length
+        ? commitsFromPullRequest
+        : commitsFromTimeline)
+        .filter((event) => event.created_at)
         .sort((a, b) => {
         const aTime = normalizeDate(a.created_at || "");
         const bTime = normalizeDate(b.created_at || "");
@@ -771,6 +785,7 @@ const calcReviewCycles = (reviews = [], timelineEvents = []) => {
         cycleCount,
         firstChangeRequestTime,
         firstUpdateAfterChangeRequest,
+        firstCommitTime: commitEvents[0]?.created_at || null,
     };
 };
 exports.calcReviewCycles = calcReviewCycles;
@@ -958,6 +973,39 @@ exports.getPullRequestSize = getPullRequestSize;
 
 /***/ }),
 
+/***/ 52163:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getPullRequestSizeCategory = void 0;
+const filesThresholds = {
+    small: 5,
+    medium: 20,
+};
+const lineThresholds = {
+    small: 250,
+    medium: 1000,
+};
+const getPullRequestSizeCategory = (additions, deletions, filesChanged) => {
+    const totalChanges = (additions || 0) + (deletions || 0);
+    const filesTouched = filesChanged || 0;
+    if (totalChanges <= lineThresholds.small &&
+        filesTouched <= filesThresholds.small) {
+        return "small";
+    }
+    if (totalChanges <= lineThresholds.medium &&
+        filesTouched <= filesThresholds.medium) {
+        return "medium";
+    }
+    return "large";
+};
+exports.getPullRequestSizeCategory = getPullRequestSizeCategory;
+
+
+/***/ }),
+
 /***/ 50779:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -1018,7 +1066,7 @@ exports.getResponses = getResponses;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isAbandonedPullRequest = exports.isStalePullRequest = exports.calcReviewCycles = exports.checkUserInclusive = exports.deletionCoefficient = exports.getResponses = exports.calcDraftTime = exports.getPullRequestSize = exports.calcAverageValue = exports.calcDifferenceInMinutes = exports.calcMedianValue = exports.calcNonWorkingHours = exports.calcWeekendMinutes = exports.getApproveTime = exports.calcPercentileValue = exports.calcIntervals = exports.prepareIntervals = void 0;
+exports.getPullRequestSizeCategory = exports.isAbandonedPullRequest = exports.isStalePullRequest = exports.calcReviewCycles = exports.checkUserInclusive = exports.deletionCoefficient = exports.getResponses = exports.calcDraftTime = exports.getPullRequestSize = exports.calcAverageValue = exports.calcDifferenceInMinutes = exports.calcMedianValue = exports.calcNonWorkingHours = exports.calcWeekendMinutes = exports.getApproveTime = exports.calcPercentileValue = exports.calcIntervals = exports.prepareIntervals = void 0;
 var prepareIntervals_1 = __nccwpck_require__(22723);
 Object.defineProperty(exports, "prepareIntervals", ({ enumerable: true, get: function () { return prepareIntervals_1.prepareIntervals; } }));
 var calcIntervals_1 = __nccwpck_require__(2414);
@@ -1052,6 +1100,8 @@ Object.defineProperty(exports, "calcReviewCycles", ({ enumerable: true, get: fun
 var isStalePullRequest_1 = __nccwpck_require__(61218);
 Object.defineProperty(exports, "isStalePullRequest", ({ enumerable: true, get: function () { return isStalePullRequest_1.isStalePullRequest; } }));
 Object.defineProperty(exports, "isAbandonedPullRequest", ({ enumerable: true, get: function () { return isStalePullRequest_1.isAbandonedPullRequest; } }));
+var getPullRequestSizeCategory_1 = __nccwpck_require__(52163);
+Object.defineProperty(exports, "getPullRequestSizeCategory", ({ enumerable: true, get: function () { return getPullRequestSizeCategory_1.getPullRequestSizeCategory; } }));
 
 
 /***/ }),
@@ -1471,6 +1521,7 @@ const preparePullRequestInfo = (pullRequest, collection) => {
     const isStale = (0, calculations_1.isStalePullRequest)(pullRequest, staleThreshold);
     const isAbandoned = (0, calculations_1.isAbandonedPullRequest)(pullRequest);
     const isReverted = (0, checkRevert_1.checkRevert)(pullRequest?.head?.ref, pullRequest?.labels);
+    const sizeCategory = (0, calculations_1.getPullRequestSizeCategory)(pullRequest?.additions, pullRequest?.deletions, pullRequest?.changed_files);
     return {
         ...collection,
         opened: (collection?.opened || 0) + 1,
@@ -1502,6 +1553,7 @@ const preparePullRequestInfo = (pullRequest, collection) => {
         ],
         stalePullRequests: (collection?.stalePullRequests || 0) + (isStale ? 1 : 0),
         abandonedPullRequests: (collection?.abandonedPullRequests || 0) + (isAbandoned ? 1 : 0),
+        sizeCategories: [...(collection?.sizeCategories || []), sizeCategory],
     };
 };
 exports.preparePullRequestInfo = preparePullRequestInfo;
@@ -1522,6 +1574,16 @@ const preparePullRequestStats = (collection) => {
     const reviewIntervals = (0, calculations_1.prepareIntervals)((0, utils_1.getMultipleValuesInput)("REVIEW_TIME_INTERVALS").map((el) => parseFloat(el)));
     const approvalIntervals = (0, calculations_1.prepareIntervals)((0, utils_1.getMultipleValuesInput)("APPROVAL_TIME_INTERVALS").map((el) => parseFloat(el)));
     const mergeIntervals = (0, calculations_1.prepareIntervals)((0, utils_1.getMultipleValuesInput)("MERGE_TIME_INTERVALS").map((el) => parseFloat(el)));
+    const totalComments = (collection.comments || 0) + (collection.totalReviewComments || 0);
+    const prCount = collection.opened || 0;
+    const prSizeCategoryCounts = (collection.sizeCategories || []).reduce((acc, category) => ({
+        ...acc,
+        [category]: (acc[category] || 0) + 1,
+    }), {
+        small: 0,
+        medium: 0,
+        large: 0,
+    });
     return {
         ...collection,
         reviewTimeIntervals: (0, calculations_1.calcIntervals)(collection.timeToReview?.map((el) => el / 60), reviewIntervals),
@@ -1599,6 +1661,23 @@ const preparePullRequestStats = (collection) => {
             updateToApproval: (0, calculations_1.calcAverageValue)(collection.updateToApprovalTimes),
             approvalToMerge: (0, calculations_1.calcAverageValue)(collection.approvalToMergeTimes),
         },
+        extendedMetrics: {
+            cycleTimeFromFirstCommitAverage: (0, calculations_1.calcAverageValue)(collection.cycleTimesFromFirstCommit),
+            prThroughput: collection.merged || 0,
+            averageCodingTime: (0, calculations_1.calcAverageValue)(collection.codingTimes),
+            reviewWaitingTimeAverage: (0, calculations_1.calcAverageValue)(collection.timeToReview),
+            reviewTimeAverage: (0, calculations_1.calcAverageValue)(collection.reviewTimes),
+            totalComments,
+            prSizeCategoryCounts,
+            averageCommentsPerPr: prCount > 0 ? totalComments / prCount : 0,
+            requestedChangesCount: collection.reviewsConducted?.total?.changes_requested || 0,
+            timeToAddressChangesAverage: (0, calculations_1.calcAverageValue)(collection.timeToAddressChangeTimes),
+            averageLocAdded: (0, calculations_1.calcAverageValue)(collection.linesAddedList),
+            averageLocDeleted: (0, calculations_1.calcAverageValue)(collection.linesRemovedList),
+            averageFilesChanged: (0, calculations_1.calcAverageValue)(collection.changedFilesCounts),
+            prsWithoutReview: collection.completedWithoutReview || 0,
+            prsWithoutApproval: collection.mergedWithoutApproval || 0,
+        },
     };
 };
 exports.preparePullRequestStats = preparePullRequestStats;
@@ -1619,10 +1698,14 @@ const calculations_1 = __nccwpck_require__(16576);
 const calcDifferenceInMinutes_1 = __nccwpck_require__(72317);
 const calcPRsize_1 = __nccwpck_require__(8722);
 const checkRevert_1 = __nccwpck_require__(37644);
-const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], reviewRequest, statuses = [], collection, timelineEvents = []) => {
+const date_fns_1 = __nccwpck_require__(73314);
+const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], reviewRequest, statuses = [], collection, timelineEvents = [], pullRequestCommits = []) => {
     if (!(0, calculations_1.checkUserInclusive)(pullRequestInfo?.user?.login || constants_1.invalidUserLogin)) {
         return collection;
     }
+    const commitHistory = Array.isArray(pullRequestCommits)
+        ? pullRequestCommits
+        : [];
     const firstReview = pullRequestReviews?.find((review) => review.user?.login !== pullRequestInfo?.user?.login &&
         (0, calculations_1.checkUserInclusive)(review.user?.login || constants_1.invalidUserLogin));
     const approveTime = (0, calculations_1.getApproveTime)(pullRequestReviews, parseInt((0, utils_1.getValueAsIs)("REQUIRED_APPROVALS")));
@@ -1633,12 +1716,41 @@ const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], re
         endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
         startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
     }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
+    const reviewerComments = timelineEvents?.filter((event) => event.event === constants_1.commentedTimelineEvent);
+    const firstReviewerComment = reviewerComments?.find((comment) => {
+        const commenterLogin = comment.actor?.login || constants_1.invalidUserLogin;
+        return (commenterLogin !== (pullRequestInfo?.user?.login || constants_1.invalidUserLogin) &&
+            (0, calculations_1.checkUserInclusive)(commenterLogin));
+    });
+    const getEarlierIsoDate = (firstDate, secondDate) => {
+        if (!firstDate) {
+            return secondDate || null;
+        }
+        if (!secondDate) {
+            return firstDate;
+        }
+        return (0, date_fns_1.isBefore)((0, date_fns_1.parseISO)(firstDate), (0, date_fns_1.parseISO)(secondDate))
+            ? firstDate
+            : secondDate;
+    };
+    const firstReviewerEngagement = getEarlierIsoDate(firstReview?.submitted_at, firstReviewerComment?.created_at);
+    const getNextEventAfter = (startDate, candidates = []) => {
+        const startTime = startDate ? (0, date_fns_1.parseISO)(startDate).getTime() : null;
+        return (candidates
+            .filter((value) => Boolean(value))
+            .map((value) => ({
+            timestamp: (0, date_fns_1.parseISO)(value).getTime(),
+            value,
+        }))
+            .filter((candidate) => startTime === null || candidate.timestamp >= startTime)
+            .sort((a, b) => a.timestamp - b.timestamp)[0]?.value || null);
+    };
     const timeInDraft = (0, calculations_1.calcDraftTime)(pullRequestInfo?.created_at, pullRequestInfo?.closed_at, statuses).reduce((acc, period) => acc +
         ((0, calcDifferenceInMinutes_1.calcDifferenceInMinutes)(period[0], period[1], {
             endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
             startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
         }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS")) || 0), 0);
-    const timeToReview = (0, calcDifferenceInMinutes_1.calcDifferenceInMinutes)(pullRequestInfo?.created_at, firstReview?.submitted_at, {
+    const timeToReview = (0, calcDifferenceInMinutes_1.calcDifferenceInMinutes)(pullRequestInfo?.created_at, firstReviewerEngagement, {
         endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
         startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
     }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
@@ -1651,8 +1763,28 @@ const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], re
         startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
     }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
     const pullRequestSize = (0, calculations_1.getPullRequestSize)(pullRequestInfo?.additions, pullRequestInfo?.deletions);
-    const { cycleCount, firstChangeRequestTime, firstUpdateAfterChangeRequest } = (0, calculations_1.calcReviewCycles)(pullRequestReviews, timelineEvents);
+    const pullRequestSizeCategory = (0, calculations_1.getPullRequestSizeCategory)(pullRequestInfo?.additions, pullRequestInfo?.deletions, pullRequestInfo?.changed_files);
+    const { cycleCount, firstChangeRequestTime, firstUpdateAfterChangeRequest, firstCommitTime, } = (0, calculations_1.calcReviewCycles)(pullRequestReviews, timelineEvents, commitHistory);
     const firstUpdateAfterChangeRequestTime = (0, calcDifferenceInMinutes_1.calcDifferenceInMinutes)(firstChangeRequestTime, firstUpdateAfterChangeRequest, {
+        endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
+        startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
+    }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
+    const reviewCompletionTimestamp = firstReviewerEngagement
+        ? getNextEventAfter(firstReviewerEngagement, [
+            firstChangeRequestTime,
+            approveTime,
+            pullRequestInfo?.merged_at || null,
+        ])
+        : null;
+    const reviewTime = (0, calcDifferenceInMinutes_1.calcDifferenceInMinutes)(firstReviewerEngagement, reviewCompletionTimestamp, {
+        endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
+        startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
+    }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
+    const changeResolutionTimestamp = getNextEventAfter(firstChangeRequestTime, [
+        approveTime,
+        pullRequestInfo?.merged_at || null,
+    ]);
+    const timeToAddressChanges = (0, calcDifferenceInMinutes_1.calcDifferenceInMinutes)(firstChangeRequestTime, changeResolutionTimestamp, {
         endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
         startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
     }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
@@ -1676,6 +1808,14 @@ const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], re
         endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
         startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
     }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
+    const codingTime = (0, calcDifferenceInMinutes_1.calcDifferenceInMinutes)(firstCommitTime, pullRequestInfo?.created_at, {
+        endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
+        startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
+    }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
+    const cycleTimeFromFirstCommit = (0, calcDifferenceInMinutes_1.calcDifferenceInMinutes)(firstCommitTime, pullRequestInfo?.merged_at, {
+        endOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_END"),
+        startOfWorkingTime: (0, utils_1.getValueAsIs)("CORE_HOURS_START"),
+    }, (0, utils_1.getMultipleValuesInput)("HOLIDAYS"));
     const staleThreshold = parseInt((0, utils_1.getValueAsIs)("STALE_PR_DAYS_THRESHOLD")) || 14;
     const isStale = (0, calculations_1.isStalePullRequest)(pullRequestInfo, staleThreshold);
     const isAbandoned = (0, calculations_1.isAbandonedPullRequest)(pullRequestInfo);
@@ -1688,6 +1828,9 @@ const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], re
     const commentsRatio = totalLinesChanged > 0
         ? (reviewComments + issueComments) / totalLinesChanged
         : reviewComments + issueComments || 0;
+    const completedWithoutReview = Boolean(pullRequestInfo?.closed_at || pullRequestInfo?.merged_at) &&
+        typeof timeToReview !== "number";
+    const mergedWithoutApproval = Boolean(pullRequestInfo?.merged_at) && !approveTime;
     return {
         ...collection,
         timeToReview: typeof timeToReview === "number"
@@ -1699,6 +1842,15 @@ const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], re
         timeToMerge: typeof timeToMerge === "number"
             ? [...(collection?.timeToMerge || []), timeToMerge]
             : collection.timeToMerge,
+        reviewTimes: typeof reviewTime === "number"
+            ? [...(collection?.reviewTimes || []), reviewTime]
+            : collection?.reviewTimes,
+        timeToAddressChangeTimes: typeof timeToAddressChanges === "number"
+            ? [
+                ...(collection?.timeToAddressChangeTimes || []),
+                timeToAddressChanges,
+            ]
+            : collection?.timeToAddressChangeTimes,
         timeToReviewRequest: typeof timeToReviewRequest === "number"
             ? [...(collection?.timeToReviewRequest || []), timeToReviewRequest]
             : collection.timeToReviewRequest,
@@ -1711,6 +1863,12 @@ const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], re
         unapproved: timeToApprove !== null
             ? collection?.unapproved || 0
             : (collection?.unapproved || 0) + 1,
+        mergedWithoutApproval: mergedWithoutApproval
+            ? (collection?.mergedWithoutApproval || 0) + 1
+            : collection?.mergedWithoutApproval || 0,
+        completedWithoutReview: completedWithoutReview
+            ? (collection?.completedWithoutReview || 0) + 1
+            : collection?.completedWithoutReview || 0,
         sizes: {
             ...(collection.sizes || {}),
             [pullRequestSize]: {
@@ -1749,6 +1907,10 @@ const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], re
                 timeToReview: timeToReview || 0,
                 timeToApprove: timeToApprove ? timeToApprove - (timeToReview || 0) : 0,
                 timeToMerge: timeToMerge ? timeToMerge - (timeToApprove || 0) : 0,
+                reviewTimeFromFirstReview: typeof reviewTime === "number" ? reviewTime : 0,
+                timeToAddressChanges: typeof timeToAddressChanges === "number"
+                    ? timeToAddressChanges
+                    : 0,
                 commitCount: pullRequestInfo?.commits || 0,
                 filesChanged: pullRequestInfo?.changed_files || 0,
                 commentsPerLineChangeRatio: Number.isFinite(commentsRatio)
@@ -1775,6 +1937,12 @@ const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], re
                     : 0,
                 updateToApproval: typeof updateToApproval === "number" ? updateToApproval : 0,
                 approvalToMerge: typeof approvalToMerge === "number" ? approvalToMerge : 0,
+                firstCommitTimestamp: firstCommitTime || null,
+                codingTime: typeof codingTime === "number" ? codingTime : 0,
+                cycleTimeFromFirstCommit: typeof cycleTimeFromFirstCommit === "number"
+                    ? cycleTimeFromFirstCommit
+                    : 0,
+                sizeCategory: pullRequestSizeCategory,
             },
         ],
         reviewCycleCounts: typeof cycleCount === "number"
@@ -1825,6 +1993,15 @@ const preparePullRequestTimeline = (pullRequestInfo, pullRequestReviews = [], re
         approvalToMergeTimes: typeof approvalToMerge === "number"
             ? [...(collection?.approvalToMergeTimes || []), approvalToMerge]
             : collection?.approvalToMergeTimes,
+        codingTimes: typeof codingTime === "number"
+            ? [...(collection?.codingTimes || []), codingTime]
+            : collection?.codingTimes,
+        cycleTimesFromFirstCommit: typeof cycleTimeFromFirstCommit === "number"
+            ? [
+                ...(collection?.cycleTimesFromFirstCommit || []),
+                cycleTimeFromFirstCommit,
+            ]
+            : collection?.cycleTimesFromFirstCommit,
     };
 };
 exports.preparePullRequestTimeline = preparePullRequestTimeline;
@@ -2064,84 +2241,89 @@ const createOutput = async (data) => {
         const users = (0, utils_2.getDisplayUserList)(data);
         const dates = (0, utils_2.sortCollectionsByDate)(data.total);
         if (outcome === "new-issue" || outcome === "existing-issue") {
-            const issueNumber = outcome === "existing-issue" ? (0, utils_1.getValueAsIs)("ISSUE_NUMBER") : undefined;
-            const markdown = (0, view_1.createMarkdown)(data, users, ["total"], "Pull Request report total");
-            if (outcome.includes("existing-issue")) {
-                await (0, requests_1.clearComments)(issueNumber);
-            }
-            const issue = await (0, requests_1.createIssue)(markdown, issueNumber);
-            const monthComparison = (0, utils_2.createTimelineMonthComparisonChart)(data, dates, users, [
-                {
-                    title: "Pull Request report total",
-                    link: `${issue.data.html_url}#`,
-                },
-            ]);
-            const comments = [];
-            if (monthComparison) {
-                const comparisonComment = await octokit_1.octokit.rest.issues.createComment({
-                    repo: (0, utils_1.getValueAsIs)("GITHUB_REPO_FOR_ISSUE"),
-                    owner: (0, utils_1.getValueAsIs)("GITHUB_OWNER_FOR_ISSUE"),
-                    issue_number: issue.data.number,
-                    body: monthComparison,
-                });
-                comments.push({
-                    comment: comparisonComment,
-                    title: "retrospective timeline",
-                });
-            }
-            if ((0, utils_1.getValueAsIs)("SHOW_CORRELATION_GRAPHS") === "true") {
-                const dependencyComment = await octokit_1.octokit.rest.issues.createComment({
-                    repo: (0, utils_1.getValueAsIs)("GITHUB_REPO_FOR_ISSUE"),
-                    owner: (0, utils_1.getValueAsIs)("GITHUB_OWNER_FOR_ISSUE"),
-                    issue_number: issue.data.number,
-                    body: (0, utils_2.createDependencyMarkdown)(data, users, [
-                        {
-                            title: "Pull Request report total",
-                            link: `${issue.data.html_url}#`,
-                        },
-                    ]),
-                });
-                comments.push({
-                    comment: dependencyComment,
-                    title: "Correlation Graphs",
-                });
-            }
-            if ((0, utils_1.getValueAsIs)("SHOW_ACTIVITY_TIME_GRAPHS") === "true") {
-                const activityComment = await octokit_1.octokit.rest.issues.createComment({
-                    repo: (0, utils_1.getValueAsIs)("GITHUB_REPO_FOR_ISSUE"),
-                    owner: (0, utils_1.getValueAsIs)("GITHUB_OWNER_FOR_ISSUE"),
-                    issue_number: issue.data.number,
-                    body: (0, createActivityTimeMarkdown_1.createActivityTimeMarkdown)(data, users, [
-                        {
-                            title: "Pull Request report total",
-                            link: `${issue.data.html_url}#`,
-                        },
-                    ]),
-                });
-                comments.push({
-                    comment: activityComment,
-                    title: "Activity time Graphs",
-                });
-            }
-            console.log("Issue successfully created.");
-            for (let date of dates) {
-                if (date === "total")
-                    continue;
-                const commentMarkdown = (0, view_1.createMarkdown)(data, users, [date], `Pull Request report ${date}`, [
+            try {
+                const issueNumber = outcome === "existing-issue" ? (0, utils_1.getValueAsIs)("ISSUE_NUMBER") : undefined;
+                const markdown = (0, view_1.createMarkdown)(data, users, ["total"], "Pull Request report total");
+                if (outcome.includes("existing-issue")) {
+                    await (0, requests_1.clearComments)(issueNumber);
+                }
+                const issue = await (0, requests_1.createIssue)(markdown, issueNumber);
+                const monthComparison = (0, utils_2.createTimelineMonthComparisonChart)(data, dates, users, [
                     {
                         title: "Pull Request report total",
                         link: `${issue.data.html_url}#`,
                     },
                 ]);
-                if (commentMarkdown === "" || dates.length < 3)
-                    continue;
-                const comment = await (0, requests_1.createComment)(issue.data.number, commentMarkdown);
-                comments.push({ comment, title: date });
+                const comments = [];
+                if (monthComparison) {
+                    const comparisonComment = await octokit_1.octokit.rest.issues.createComment({
+                        repo: (0, utils_1.getValueAsIs)("GITHUB_REPO_FOR_ISSUE"),
+                        owner: (0, utils_1.getValueAsIs)("GITHUB_OWNER_FOR_ISSUE"),
+                        issue_number: issue.data.number,
+                        body: monthComparison,
+                    });
+                    comments.push({
+                        comment: comparisonComment,
+                        title: "retrospective timeline",
+                    });
+                }
+                if ((0, utils_1.getValueAsIs)("SHOW_CORRELATION_GRAPHS") === "true") {
+                    const dependencyComment = await octokit_1.octokit.rest.issues.createComment({
+                        repo: (0, utils_1.getValueAsIs)("GITHUB_REPO_FOR_ISSUE"),
+                        owner: (0, utils_1.getValueAsIs)("GITHUB_OWNER_FOR_ISSUE"),
+                        issue_number: issue.data.number,
+                        body: (0, utils_2.createDependencyMarkdown)(data, users, [
+                            {
+                                title: "Pull Request report total",
+                                link: `${issue.data.html_url}#`,
+                            },
+                        ]),
+                    });
+                    comments.push({
+                        comment: dependencyComment,
+                        title: "Correlation Graphs",
+                    });
+                }
+                if ((0, utils_1.getValueAsIs)("SHOW_ACTIVITY_TIME_GRAPHS") === "true") {
+                    const activityComment = await octokit_1.octokit.rest.issues.createComment({
+                        repo: (0, utils_1.getValueAsIs)("GITHUB_REPO_FOR_ISSUE"),
+                        owner: (0, utils_1.getValueAsIs)("GITHUB_OWNER_FOR_ISSUE"),
+                        issue_number: issue.data.number,
+                        body: (0, createActivityTimeMarkdown_1.createActivityTimeMarkdown)(data, users, [
+                            {
+                                title: "Pull Request report total",
+                                link: `${issue.data.html_url}#`,
+                            },
+                        ]),
+                    });
+                    comments.push({
+                        comment: activityComment,
+                        title: "Activity time Graphs",
+                    });
+                }
+                console.log("Issue successfully created.");
+                for (let date of dates) {
+                    if (date === "total")
+                        continue;
+                    const commentMarkdown = (0, view_1.createMarkdown)(data, users, [date], `Pull Request report ${date}`, [
+                        {
+                            title: "Pull Request report total",
+                            link: `${issue.data.html_url}#`,
+                        },
+                    ]);
+                    if (commentMarkdown === "" || dates.length < 3)
+                        continue;
+                    const comment = await (0, requests_1.createComment)(issue.data.number, commentMarkdown);
+                    comments.push({ comment, title: date });
+                }
+                await (0, requests_1.createIssue)((0, view_1.createMarkdown)(data, users, ["total"], "Pull Request report total", comments.map((comment) => ({
+                    title: `Pull Request report ${comment.title}`,
+                    link: comment.comment.data.html_url,
+                }))), issue.data.number);
             }
-            await (0, requests_1.createIssue)((0, view_1.createMarkdown)(data, users, ["total"], "Pull Request report total", comments.map((comment) => ({
-                title: `Pull Request report ${comment.title}`,
-                link: comment.comment.data.html_url,
-            }))), issue.data.number);
+            catch (error) {
+                console.error("Issue output failed. Skipping issue creation step but continuing with other outputs.", error);
+            }
         }
         if (outcome === "markdown") {
             const monthComparison = (0, utils_1.getMultipleValuesInput)("SHOW_STATS_TYPES").includes(constants_1.showStatsTypes.timeline)
@@ -2157,6 +2339,123 @@ const createOutput = async (data) => {
     }
 };
 exports.createOutput = createOutput;
+
+
+/***/ }),
+
+/***/ 79283:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+__nccwpck_require__(44227);
+const core = __importStar(__nccwpck_require__(42186));
+const createOutput_1 = __nccwpck_require__(63119);
+const requests_1 = __nccwpck_require__(49591);
+const converters_1 = __nccwpck_require__(86200);
+const utils_1 = __nccwpck_require__(41002);
+const getRateLimit_1 = __nccwpck_require__(78028);
+const analytics_1 = __nccwpck_require__(88345);
+async function main() {
+    try {
+        (0, utils_1.setTimezone)();
+        (0, analytics_1.sendActionRun)();
+        try {
+            const rateLimitAtBeginning = await (0, getRateLimit_1.getRateLimit)();
+            console.log("RATE LIMIT REMAINING BEFORE REQUESTS: ", rateLimitAtBeginning.data.rate.remaining);
+        }
+        catch (error) {
+            console.log("Rate limit could not be retrieved at the beginning of the action");
+        }
+        const ownersRepos = (0, requests_1.getOwnersRepositories)();
+        const organizationsRepos = await (0, requests_1.getOrganizationsRepositories)();
+        const repos = Object.keys([...ownersRepos, ...organizationsRepos].reduce((acc, element) => {
+            return { ...acc, [element.join("/")]: 1 };
+        }, {})).map((el) => el.split("/"));
+        console.log("Initiating data request.");
+        const data = [];
+        const orgs = (0, utils_1.getOrgs)();
+        const teams = await (0, requests_1.getTeams)(orgs);
+        const failedRepositories = [];
+        for (let i = 0; i < repos.length; i++) {
+            try {
+                const result = await (0, requests_1.makeComplexRequest)(parseInt((0, utils_1.getValueAsIs)("AMOUNT")), {
+                    owner: repos[i][0],
+                    repo: repos[i][1],
+                }, {
+                    skipComments: (0, utils_1.checkCommentSkip)(),
+                });
+                data.push(result);
+            }
+            catch (error) {
+                const repoName = `${repos[i][0]}/${repos[i][1]}`;
+                failedRepositories.push(repoName);
+                console.error(`Failed to retrieve data for ${repoName}. Continuing with remaining repositories.`, error);
+            }
+        }
+        if (failedRepositories.length) {
+            core.warning(`The following repositories could not be processed: ${failedRepositories.join(", ")}`);
+        }
+        if (data.length === 0) {
+            throw new Error("No repositories could be processed. Please verify repository access and configuration.");
+        }
+        console.log("Data successfully retrieved. Starting report calculations.");
+        const mergedData = data.reduce((acc, element) => ({
+            ownerRepo: acc.ownerRepo
+                ? acc.ownerRepo.concat(",", element.ownerRepo)
+                : element.ownerRepo,
+            events: [...acc.events, ...element.events],
+            pullRequestInfo: [...acc?.pullRequestInfo, ...element.pullRequestInfo],
+            comments: [...acc?.comments, ...element.comments],
+            commits: [...acc?.commits, ...element.commits],
+        }), {
+            ownerRepo: "",
+            events: [],
+            pullRequestInfo: [],
+            comments: [],
+            commits: [],
+        });
+        const preparedData = (0, converters_1.collectData)(mergedData, teams);
+        console.log("Calculation complete. Generating markdown.");
+        await (0, createOutput_1.createOutput)(preparedData);
+        try {
+            const rateLimitAtEnd = await (0, getRateLimit_1.getRateLimit)();
+            console.log("RATE LIMIT REMAINING AFTER REQUESTS: ", rateLimitAtEnd.data.rate.remaining);
+        }
+        catch (error) {
+            console.log("Rate limit could not be retrieved at the end of the action");
+        }
+    }
+    catch (error) {
+        (0, analytics_1.sendActionError)(error);
+        throw error;
+    }
+}
+main();
 
 
 /***/ }),
@@ -2374,11 +2673,13 @@ const constants_1 = __nccwpck_require__(8827);
 const delay_1 = __nccwpck_require__(1847);
 const getIssueTimelineEvents_1 = __nccwpck_require__(39684);
 const getPullRequestComments_1 = __nccwpck_require__(92041);
+const getPullRequestCommits_1 = __nccwpck_require__(93138);
 const getPullRequestData_1 = __nccwpck_require__(6382);
 const getDataWithThrottle = async (pullRequestNumbers, repository, options) => {
     const PRs = [];
     const PREvents = [];
     const PRComments = [];
+    const PRCommits = [];
     let counter = 0;
     const { skipComments = true } = options;
     while (pullRequestNumbers.length > PRs.length) {
@@ -2397,12 +2698,16 @@ const getDataWithThrottle = async (pullRequestNumbers, repository, options) => {
         });
         const comments = await Promise.allSettled(pullRequestComments);
         await (0, delay_1.delay)((0, utils_1.checkCommentSkip)() ? 0 : 5000);
+        const pullRequestCommits = await (0, getPullRequestCommits_1.getPullRequestCommits)(pullRequestNumbersChunks, repository);
+        const commits = await Promise.allSettled(pullRequestCommits);
+        await (0, delay_1.delay)(5000);
         counter++;
         PRs.push(...prs);
         PRComments.push(...comments);
         PREvents.push(...events);
+        PRCommits.push(...commits);
     }
-    return { PRs, PREvents, PRComments };
+    return { PRs, PREvents, PRComments, PRCommits };
 };
 exports.getDataWithThrottle = getDataWithThrottle;
 
@@ -2496,6 +2801,33 @@ const getPullRequestComments = async (pullRequestNumbers, repository, options) =
         : [];
 };
 exports.getPullRequestComments = getPullRequestComments;
+
+
+/***/ }),
+
+/***/ 93138:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getPullRequestCommits = void 0;
+const octokit_1 = __nccwpck_require__(75455);
+const constants_1 = __nccwpck_require__(8827);
+const getPullRequestCommits = async (pullRequestNumbers, repository) => {
+    const { owner, repo } = repository;
+    return pullRequestNumbers.map(async (number) => {
+        const commits = await octokit_1.octokit.paginate(octokit_1.octokit.rest.pulls.listCommits, {
+            owner,
+            repo,
+            pull_number: number,
+            headers: constants_1.commonHeaders,
+            per_page: 100,
+        });
+        return { data: commits };
+    });
+};
+exports.getPullRequestCommits = getPullRequestCommits;
 
 
 /***/ }),
@@ -2711,15 +3043,17 @@ const makeComplexRequest = async (amount = 100, repository, options = {
         return isIncludeLabelsCorrect && isExcludeLabelsCorrect;
     })
         .map((item) => item.number);
-    const { PRs, PREvents, PRComments } = await (0, getDataWithThrottle_1.getDataWithThrottle)(pullRequestNumbers, repository, options);
+    const { PRs, PREvents, PRComments, PRCommits } = await (0, getDataWithThrottle_1.getDataWithThrottle)(pullRequestNumbers, repository, options);
     const events = PREvents.map((element) => element.status === "fulfilled" ? element.value.data : null);
     const pullRequestInfo = PRs.map((element) => element.status === "fulfilled" ? element.value.data : null);
     const comments = PRComments.map((element) => element.status === "fulfilled" ? element.value.data : null);
+    const commits = PRCommits.map((element) => element.status === "fulfilled" ? element.value.data : null);
     return {
         ownerRepo: `${repository.owner}/${repository.repo}`,
         events,
         pullRequestInfo,
         comments,
+        commits,
     };
 };
 exports.makeComplexRequest = makeComplexRequest;
@@ -3640,19 +3974,13 @@ const createStageDurationTable = (data, type, users, date) => {
     const tableRows = users
         .filter((user) => data[user]?.[date]?.merged)
         .map((user) => {
-        const assignment = data[user]?.[date]?.[type]?.assignmentTime || 0;
-        const assignmentToReview = data[user]?.[date]?.[type]?.assignmentToReviewRequest || 0;
-        const reviewToChange = data[user]?.[date]?.[type]?.reviewRequestToChangeRequest || 0;
-        const changeToUpdate = data[user]?.[date]?.[type]?.firstUpdateAfterChangeRequestTime || 0;
-        const updateToApprovalValue = data[user]?.[date]?.[type]?.updateToApproval || 0;
-        const approvalToMergeValue = data[user]?.[date]?.[type]?.approvalToMerge || 0;
         const stageValues = [
-            assignment,
-            assignmentToReview,
-            reviewToChange,
-            changeToUpdate,
-            updateToApprovalValue,
-            approvalToMergeValue,
+            data[user]?.[date]?.[type]?.assignmentTime || 0,
+            data[user]?.[date]?.[type]?.assignmentToReviewRequest || 0,
+            data[user]?.[date]?.[type]?.reviewRequestToChangeRequest || 0,
+            data[user]?.[date]?.[type]?.firstUpdateAfterChangeRequestTime || 0,
+            data[user]?.[date]?.[type]?.updateToApproval || 0,
+            data[user]?.[date]?.[type]?.approvalToMerge || 0,
         ];
         if (stageValues.some((value) => value)) {
             hasData = true;
@@ -3662,9 +3990,8 @@ const createStageDurationTable = (data, type, users, date) => {
             ...stageValues.map((value) => (0, formatMinutesDuration_1.formatMinutesDuration)(value || 0)),
         ];
     });
-    if (!hasData) {
+    if (!hasData)
         return "";
-    }
     return (0, common_1.createTable)({
         title: `Stage duration breakdown(${type}) ${date}`,
         description: "**Creation → Assignment** through **Approval → Merge** show the average time spent in each stage. These values complement the overall creation → milestone durations shown in the main timeline table.",
@@ -93120,83 +93447,12 @@ module.exports = JSON.parse('{"name":"mixpanel","description":"A simple server-s
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
-var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be in strict mode.
-(() => {
-"use strict";
-var exports = __webpack_exports__;
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-__nccwpck_require__(44227);
-const createOutput_1 = __nccwpck_require__(63119);
-const requests_1 = __nccwpck_require__(49591);
-const converters_1 = __nccwpck_require__(86200);
-const utils_1 = __nccwpck_require__(41002);
-const getRateLimit_1 = __nccwpck_require__(78028);
-const analytics_1 = __nccwpck_require__(88345);
-async function main() {
-    try {
-        (0, utils_1.setTimezone)();
-        (0, analytics_1.sendActionRun)();
-        try {
-            const rateLimitAtBeginning = await (0, getRateLimit_1.getRateLimit)();
-            console.log("RATE LIMIT REMAINING BEFORE REQUESTS: ", rateLimitAtBeginning.data.rate.remaining);
-        }
-        catch (error) {
-            console.log("Rate limit could not be retrieved at the beginning of the action");
-        }
-        const ownersRepos = (0, requests_1.getOwnersRepositories)();
-        const organizationsRepos = await (0, requests_1.getOrganizationsRepositories)();
-        const repos = Object.keys([...ownersRepos, ...organizationsRepos].reduce((acc, element) => {
-            return { ...acc, [element.join("/")]: 1 };
-        }, {})).map((el) => el.split("/"));
-        console.log("Initiating data request.");
-        const data = [];
-        const orgs = (0, utils_1.getOrgs)();
-        const teams = await (0, requests_1.getTeams)(orgs);
-        for (let i = 0; i < repos.length; i++) {
-            const result = await (0, requests_1.makeComplexRequest)(parseInt((0, utils_1.getValueAsIs)("AMOUNT")), {
-                owner: repos[i][0],
-                repo: repos[i][1],
-            }, {
-                skipComments: (0, utils_1.checkCommentSkip)(),
-            });
-            data.push(result);
-        }
-        console.log("Data successfully retrieved. Starting report calculations.");
-        const mergedData = data.reduce((acc, element) => ({
-            ownerRepo: acc.ownerRepo
-                ? acc.ownerRepo.concat(",", element.ownerRepo)
-                : element.ownerRepo,
-            events: [...acc.events, ...element.events],
-            pullRequestInfo: [...acc?.pullRequestInfo, ...element.pullRequestInfo],
-            comments: [...acc?.comments, ...element.comments],
-        }), {
-            ownerRepo: "",
-            events: [],
-            pullRequestInfo: [],
-            comments: [],
-        });
-        const preparedData = (0, converters_1.collectData)(mergedData, teams);
-        console.log("Calculation complete. Generating markdown.");
-        await (0, createOutput_1.createOutput)(preparedData);
-        try {
-            const rateLimitAtEnd = await (0, getRateLimit_1.getRateLimit)();
-            console.log("RATE LIMIT REMAINING AFTER REQUESTS: ", rateLimitAtEnd.data.rate.remaining);
-        }
-        catch (error) {
-            console.log("Rate limit could not be retrieved at the end of the action");
-        }
-    }
-    catch (error) {
-        (0, analytics_1.sendActionError)(error);
-        throw error;
-    }
-}
-main();
-
-})();
-
-module.exports = __webpack_exports__;
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module is referenced by other modules so it can't be inlined
+/******/ 	var __webpack_exports__ = __nccwpck_require__(79283);
+/******/ 	module.exports = __webpack_exports__;
+/******/ 	
 /******/ })()
 ;

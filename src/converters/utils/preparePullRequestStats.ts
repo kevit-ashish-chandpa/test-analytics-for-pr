@@ -20,6 +20,20 @@ export const preparePullRequestStats = (collection: Collection) => {
   const mergeIntervals = prepareIntervals(
     getMultipleValuesInput("MERGE_TIME_INTERVALS").map((el) => parseFloat(el))
   );
+  const totalComments =
+    (collection.comments || 0) + (collection.totalReviewComments || 0);
+  const prCount = collection.opened || 0;
+  const prSizeCategoryCounts = (collection.sizeCategories || []).reduce(
+    (acc, category) => ({
+      ...acc,
+      [category]: (acc[category] || 0) + 1,
+    }),
+    {
+      small: 0,
+      medium: 0,
+      large: 0,
+    }
+  );
   return {
     ...collection,
     reviewTimeIntervals: calcIntervals(
@@ -150,6 +164,28 @@ export const preparePullRequestStats = (collection: Collection) => {
       ),
       updateToApproval: calcAverageValue(collection.updateToApprovalTimes),
       approvalToMerge: calcAverageValue(collection.approvalToMergeTimes),
+    },
+    extendedMetrics: {
+      cycleTimeFromFirstCommitAverage: calcAverageValue(
+        collection.cycleTimesFromFirstCommit
+      ),
+      prThroughput: collection.merged || 0,
+      averageCodingTime: calcAverageValue(collection.codingTimes),
+      reviewWaitingTimeAverage: calcAverageValue(collection.timeToReview),
+      reviewTimeAverage: calcAverageValue(collection.reviewTimes),
+      totalComments,
+      prSizeCategoryCounts,
+      averageCommentsPerPr: prCount > 0 ? totalComments / prCount : 0,
+      requestedChangesCount:
+        collection.reviewsConducted?.total?.changes_requested || 0,
+      timeToAddressChangesAverage: calcAverageValue(
+        collection.timeToAddressChangeTimes
+      ),
+      averageLocAdded: calcAverageValue(collection.linesAddedList),
+      averageLocDeleted: calcAverageValue(collection.linesRemovedList),
+      averageFilesChanged: calcAverageValue(collection.changedFilesCounts),
+      prsWithoutReview: collection.completedWithoutReview || 0,
+      prsWithoutApproval: collection.mergedWithoutApproval || 0,
     },
   };
 };

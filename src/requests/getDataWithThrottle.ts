@@ -3,6 +3,7 @@ import { concurrentLimit } from "./constants";
 import { delay } from "./delay";
 import { getIssueTimelineEvents } from "./getIssueTimelineEvents";
 import { getPullRequestComments } from "./getPullRequestComments";
+import { getPullRequestCommits } from "./getPullRequestCommits";
 import { getPullRequestDatas } from "./getPullRequestData";
 import { Options, Repository } from "./types";
 
@@ -14,6 +15,7 @@ export const getDataWithThrottle = async (
   const PRs = [];
   const PREvents = [];
   const PRComments = [];
+  const PRCommits = [];
   let counter = 0;
   const { skipComments = true } = options;
   while (pullRequestNumbers.length > PRs.length) {
@@ -52,10 +54,18 @@ export const getDataWithThrottle = async (
 
     const comments = await Promise.allSettled(pullRequestComments);
     await delay(checkCommentSkip() ? 0 : 5000);
+
+    const pullRequestCommits = await getPullRequestCommits(
+      pullRequestNumbersChunks,
+      repository
+    );
+    const commits = await Promise.allSettled(pullRequestCommits);
+    await delay(5000);
     counter++;
     PRs.push(...prs);
     PRComments.push(...comments);
     PREvents.push(...events);
+    PRCommits.push(...commits);
   }
-  return { PRs, PREvents, PRComments };
+  return { PRs, PREvents, PRComments, PRCommits };
 };

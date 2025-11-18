@@ -28,7 +28,7 @@ export const makeComplexRequest = async (
     })
     .map((item) => item.number);
 
-  const { PRs, PREvents, PRComments } = await getDataWithThrottle(
+  const { PRs, PREvents, PRComments, PRCommits } = await getDataWithThrottle(
     pullRequestNumbers,
     repository,
     options
@@ -46,10 +46,15 @@ export const makeComplexRequest = async (
     element.status === "fulfilled" ? element.value.data : null
   );
 
+  const commits = PRCommits.map((element) =>
+    element.status === "fulfilled" ? element.value.data : null
+  );
+
   return {
     ownerRepo: `${repository.owner}/${repository.repo}`,
     events,
     pullRequestInfo,
     comments,
+    commits,
   };
 };

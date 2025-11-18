@@ -41,4 +41,27 @@ describe("calcReviewCycles", () => {
     expect(result.cycleCount).toBe(0);
     expect(result.firstUpdateAfterChangeRequest).toBeNull();
   });
+
+  it("uses commits payload when timeline events are missing", () => {
+    const reviews = [
+      {
+        state: "CHANGES_REQUESTED",
+        submitted_at: "2024-01-01T00:00:00Z",
+      },
+    ];
+
+    const commits = [
+      {
+        commit: {
+          author: { date: "2024-01-01T05:00:00Z" },
+        },
+      },
+    ];
+
+    const result = calcReviewCycles(reviews, [], commits);
+
+    expect(result.cycleCount).toBe(1);
+    expect(result.firstCommitTime).toBe("2024-01-01T05:00:00Z");
+    expect(result.firstUpdateAfterChangeRequest).toBe("2024-01-01T05:00:00Z");
+  });
 });
