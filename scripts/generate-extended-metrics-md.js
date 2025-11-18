@@ -2,11 +2,11 @@
 const fs = require("fs");
 const path = require("path");
 
-const [, , inputPath, jsonOutputPath, mdOutputPath] = process.argv;
+const [, , inputPath, jsonOutputPath, mdOutputPath, csvOutputPath] = process.argv;
 
-if (!inputPath || !jsonOutputPath || !mdOutputPath) {
+if (!inputPath || !jsonOutputPath || !mdOutputPath || !csvOutputPath) {
   console.error(
-    "Usage: node scripts/generate-extended-metrics-md.js <collection.json> <output.json> <output.md>"
+    "Usage: node scripts/generate-extended-metrics-md.js <collection.json> <output.json> <output.md> <output.csv>"
   );
   process.exit(1);
 }
@@ -125,15 +125,17 @@ const headers = [
   "PRs w/o Approval",
 ];
 
+const formatAverageLoc = (data) =>
+  data.averageLocAdded !== null || data.averageLocDeleted !== null
+    ? `+${formatNumber(data.averageLocAdded)} / -${formatNumber(
+        data.averageLocDeleted
+      )}`
+    : "n/a";
+
 const tableRows = developers
   .map((developer) => {
     const data = metricsByDeveloper[developer];
-    const averageLoc =
-      data.averageLocAdded !== null || data.averageLocDeleted !== null
-        ? `+${formatNumber(data.averageLocAdded)} / -${formatNumber(
-            data.averageLocDeleted
-          )}`
-        : "n/a";
+    const averageLoc = formatAverageLoc(data);
     return `| ${developer} | ${formatMinutes(
       data.cycleTimeMinutes
     )} | ${data.prThroughput} | ${formatMinutes(
@@ -196,9 +198,44 @@ const charts = [
 
 const markdownOutput = [table, ...charts].join("\n");
 writeFile(mdOutputPath, markdownOutput);
+const csvLines = [
+  headers.join(","),
+  ...developers.map((developer) => {
+    const data = metricsByDeveloper[developer];
+    const rowValues = [
+      developer,
+      formatMinutes(data.cycleTimeMinutes),
+      data.prThroughput,
+      formatMinutes(data.averageCodingTimeMinutes),
+      formatMinutes(data.reviewWaitingTimeMinutes),
+      formatMinutes(data.reviewTimeMinutes),
+      data.totalComments,
+      formatSizeMix(data.sizeCategoryCounts),
+      formatNumber(data.averageCommentsPerPr),
+      data.requestedChangesCount,
+      formatMinutes(data.timeToAddressChangesMinutes),
+      formatAverageLoc(data),
+      formatNumber(data.averageFilesChanged),
+      data.prsWithoutReview,
+      data.prsWithoutApproval,
+    ];
+    return rowValues
+      .map((value) => {
+        const serialized = `${value}`;
+        return serialized.includes(",")
+          ? `"${serialized.replace(/"/g, '""')}"`
+          : serialized;
+      })
+      .join(",");
+  }),
+].join("\n");
+writeFile(csvOutputPath, csvLines);
 console.log(
   `Extended metrics saved to:\n- ${path.resolve(
     process.cwd(),
     jsonOutputPath
-  )}\n- ${path.resolve(process.cwd(), mdOutputPath)}`
+  )}\n- ${path.resolve(process.cwd(), mdOutputPath)}\n- ${path.resolve(
+    process.cwd(),
+    csvOutputPath
+  )}`
 );
