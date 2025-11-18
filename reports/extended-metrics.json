@@ -1,0 +1,170 @@
+{
+  "gemini-code-assist[bot]": {
+    "cycleTimeMinutes": 0,
+    "prThroughput": 0,
+    "averageCodingTimeMinutes": 0,
+    "reviewWaitingTimeMinutes": 0,
+    "reviewTimeMinutes": 0,
+    "totalComments": 0,
+    "sizeCategoryCounts": {
+      "small": 0,
+      "medium": 0,
+      "large": 0
+    },
+    "averageCommentsPerPr": 0,
+    "requestedChangesCount": 0,
+    "timeToAddressChangesMinutes": 0,
+    "averageLocAdded": 0,
+    "averageLocDeleted": 0,
+    "averageFilesChanged": 0,
+    "prsWithoutReview": 0,
+    "prsWithoutApproval": 0
+  },
+  "kevit-maurya-valambhiya": {
+    "cycleTimeMinutes": 32,
+    "prThroughput": 5,
+    "averageCodingTimeMinutes": 7,
+    "reviewWaitingTimeMinutes": 1,
+    "reviewTimeMinutes": 24,
+    "totalComments": 28,
+    "sizeCategoryCounts": {
+      "small": 2,
+      "medium": 2,
+      "large": 1
+    },
+    "averageCommentsPerPr": 5.6,
+    "requestedChangesCount": 0,
+    "timeToAddressChangesMinutes": 0,
+    "averageLocAdded": 281,
+    "averageLocDeleted": 70,
+    "averageFilesChanged": 9,
+    "prsWithoutReview": 0,
+    "prsWithoutApproval": 5
+  },
+  "developers-jump-start": {
+    "cycleTimeMinutes": 32,
+    "prThroughput": 5,
+    "averageCodingTimeMinutes": 7,
+    "reviewWaitingTimeMinutes": 1,
+    "reviewTimeMinutes": 24,
+    "totalComments": 28,
+    "sizeCategoryCounts": {
+      "small": 2,
+      "medium": 2,
+      "large": 1
+    },
+    "averageCommentsPerPr": 5.6,
+    "requestedChangesCount": 0,
+    "timeToAddressChangesMinutes": 0,
+    "averageLocAdded": 281,
+    "averageLocDeleted": 70,
+    "averageFilesChanged": 9,
+    "prsWithoutReview": 0,
+    "prsWithoutApproval": 5
+  },
+  "M2PG-Payment-Gateway Frontend Team": {
+    "cycleTimeMinutes": 32,
+    "prThroughput": 5,
+    "averageCodingTimeMinutes": 7,
+    "reviewWaitingTimeMinutes": 1,
+    "reviewTimeMinutes": 24,
+    "totalComments": 28,
+    "sizeCategoryCounts": {
+      "small": 2,
+      "medium": 2,
+      "large": 1
+    },
+    "averageCommentsPerPr": 5.6,
+    "requestedChangesCount": 0,
+    "timeToAddressChangesMinutes": 0,
+    "averageLocAdded": 281,
+    "averageLocDeleted": 70,
+    "averageFilesChanged": 9,
+    "prsWithoutReview": 0,
+    "prsWithoutApproval": 5
+  },
+  "NextGenAfricaBank-Team": {
+    "cycleTimeMinutes": 32,
+    "prThroughput": 5,
+    "averageCodingTimeMinutes": 7,
+    "reviewWaitingTimeMinutes": 1,
+    "reviewTimeMinutes": 24,
+    "totalComments": 28,
+    "sizeCategoryCounts": {
+      "small": 2,
+      "medium": 2,
+      "large": 1
+    },
+    "averageCommentsPerPr": 5.6,
+    "requestedChangesCount": 0,
+    "timeToAddressChangesMinutes": 0,
+    "averageLocAdded": 281,
+    "averageLocDeleted": 70,
+    "averageFilesChanged": 9,
+    "prsWithoutReview": 0,
+    "prsWithoutApproval": 5
+  },
+  "orient-museum-FE": {
+    "cycleTimeMinutes": 32,
+    "prThroughput": 5,
+    "averageCodingTimeMinutes": 7,
+    "reviewWaitingTimeMinutes": 1,
+    "reviewTimeMinutes": 24,
+    "totalComments": 28,
+    "sizeCategoryCounts": {
+      "small": 2,
+      "medium": 2,
+      "large": 1
+    },
+    "averageCommentsPerPr": 5.6,
+    "requestedChangesCount": 0,
+    "timeToAddressChangesMinutes": 0,
+    "averageLocAdded": 281,
+    "averageLocDeleted": 70,
+    "averageFilesChanged": 9,
+    "prsWithoutReview": 0,
+    "prsWithoutApproval": 5
+  },
+  "Project Telemetry Backend Team": {
+    "cycleTimeMinutes": 32,
+    "prThroughput": 5,
+    "averageCodingTimeMinutes": 7,
+    "reviewWaitingTimeMinutes": 1,
+    "reviewTimeMinutes": 24,
+    "totalComments": 28,
+    "sizeCategoryCounts": {
+      "small": 2,
+      "medium": 2,
+      "large": 1
+    },
+    "averageCommentsPerPr": 5.6,
+    "requestedChangesCount": 0,
+    "timeToAddressChangesMinutes": 0,
+    "averageLocAdded": 281,
+    "averageLocDeleted": 70,
+    "averageFilesChanged": 9,
+    "prsWithoutReview": 0,
+    "prsWithoutApproval": 5
+  },
+  "Project Telemetry Frontend Team": {
+    "cycleTimeMinutes": 32,
+    "prThroughput": 5,
+    "averageCodingTimeMinutes": 7,
+    "reviewWaitingTimeMinutes": 1,
+    "reviewTimeMinutes": 24,
+    "totalComments": 28,
+    "sizeCategoryCounts": {
+      "small": 2,
+      "medium": 2,
+      "large": 1
+    },
+    "averageCommentsPerPr": 5.6,
+    "requestedChangesCount": 0,
+    "timeToAddressChangesMinutes": 0,
+    "averageLocAdded": 281,
+    "averageLocDeleted": 70,
+    "averageFilesChanged": 9,
+    "prsWithoutReview": 0,
+    "prsWithoutApproval": 5
+  }
+}
